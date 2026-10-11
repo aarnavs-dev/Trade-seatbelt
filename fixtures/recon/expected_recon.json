@@ -1,0 +1,155 @@
+{
+  "counts": {
+    "AMBIGUOUS": 1,
+    "MATCHED": 6,
+    "MISSING_IN_BROKER": 2,
+    "MISSING_IN_LOG": 5,
+    "PRICE_MISMATCH": 1,
+    "QTY_MISMATCH": 1
+  },
+  "csv_rows": 14,
+  "excluded_ambiguous": {
+    "csv_rows": 1,
+    "findings": 1,
+    "log_fills": 2
+  },
+  "findings": [
+    [
+      "MATCHED",
+      [
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    [
+      "MATCHED",
+      [
+        2
+      ],
+      [
+        3
+      ]
+    ],
+    [
+      "MATCHED",
+      [
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    [
+      "MATCHED",
+      [
+        4
+      ],
+      [
+        6
+      ]
+    ],
+    [
+      "MATCHED",
+      [
+        5
+      ],
+      [
+        7
+      ]
+    ],
+    [
+      "MATCHED",
+      [
+        10
+      ],
+      [
+        11
+      ]
+    ],
+    [
+      "QTY_MISMATCH",
+      [
+        8
+      ],
+      [
+        9
+      ]
+    ],
+    [
+      "PRICE_MISMATCH",
+      [
+        9
+      ],
+      [
+        10
+      ]
+    ],
+    [
+      "AMBIGUOUS",
+      [
+        11,
+        12
+      ],
+      [
+        12
+      ]
+    ],
+    [
+      "MISSING_IN_BROKER",
+      [
+        7
+      ],
+      []
+    ],
+    [
+      "MISSING_IN_BROKER",
+      [
+        13
+      ],
+      []
+    ],
+    [
+      "MISSING_IN_LOG",
+      [],
+      [
+        4
+      ]
+    ],
+    [
+      "MISSING_IN_LOG",
+      [],
+      [
+        8
+      ]
+    ],
+    [
+      "MISSING_IN_LOG",
+      [],
+      [
+        13
+      ]
+    ],
+    [
+      "MISSING_IN_LOG",
+      [],
+      [
+        14
+      ]
+    ],
+    [
+      "MISSING_IN_LOG",
+      [],
+      [
+        15
+      ]
+    ]
+  ],
+  "implied_cash_excl_fees": -249100,
+  "implied_position": {
+    "AAPL": 23,
+    "MSFT": -5
+  },
+  "log_fills": 12
+}

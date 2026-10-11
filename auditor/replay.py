@@ -15,6 +15,8 @@ class Audit:
     rejects: Counter = field(default_factory=Counter)
     findings: list = field(default_factory=list)
     chain_error: ChainError | None = None
+    fills: list = field(default_factory=list)      # verified ACCEPT events, in seq order (for reconciliation)
+    rejected: dict = field(default_factory=dict)   # client_order_id -> (seq, reason_code) of its first REJECT
 
 
 def audit(log_path, rules) -> Audit:
@@ -38,8 +40,10 @@ def audit(log_path, rules) -> Audit:
             prev_ts, a.events = ev.ts, a.events + 1
             if ev.decision == "ACCEPT":
                 a.accepted += 1
+                a.fills.append(ev)
             else:
                 a.rejects[ev.reason_code] += 1
+                a.rejected.setdefault(ev.client_order_id, (ev.seq, ev.reason_code))
     except ChainError as e:
         a.chain_error = e
     return a

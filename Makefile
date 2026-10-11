@@ -1,7 +1,7 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: setup demo test bench bench-docker bench-report clean
+.PHONY: setup demo demo-recon test bench bench-docker bench-report clean
 
 setup:
 	$(PYTHON312) -m venv .venv
@@ -10,6 +10,9 @@ setup:
 
 demo:
 	bash scripts/demo.sh
+
+demo-recon:
+	bash scripts/demo_recon.sh
 
 test:
 	$(PY) -m pytest -q

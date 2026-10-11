@@ -1,0 +1,85 @@
+{
+  "accepted": 9,
+  "accepted_rows": [
+    2,
+    4,
+    6,
+    7,
+    8,
+    9,
+    14,
+    15,
+    18
+  ],
+  "blocked": 8,
+  "blocked_by_rule": {
+    "LOSS_STREAK_COOLDOWN": 4,
+    "MAX_DAILY_LOSS": 2,
+    "MAX_POSITION": 1,
+    "PRICE_BAND": 1
+  },
+  "evidence": {
+    "10": [
+      "LOSS_STREAK_COOLDOWN",
+      "cooldown until 2026-10-09T14:37:10Z",
+      "order at 2026-10-09T14:32:20Z"
+    ],
+    "11": [
+      "LOSS_STREAK_COOLDOWN",
+      "cooldown until 2026-10-09T14:37:10Z",
+      "order at 2026-10-09T14:32:30Z"
+    ],
+    "12": [
+      "LOSS_STREAK_COOLDOWN",
+      "cooldown until 2026-10-09T14:37:10Z",
+      "order at 2026-10-09T14:32:40Z"
+    ],
+    "13": [
+      "LOSS_STREAK_COOLDOWN",
+      "cooldown until 2026-10-09T14:37:10Z",
+      "order at 2026-10-09T14:32:50Z"
+    ],
+    "16": [
+      "MAX_DAILY_LOSS",
+      5000,
+      96590
+    ],
+    "17": [
+      "MAX_DAILY_LOSS",
+      5000,
+      96590
+    ],
+    "3": [
+      "MAX_POSITION",
+      100,
+      110
+    ],
+    "5": [
+      "PRICE_BAND",
+      "5% of reference 19000",
+      "21000 (deviation 2000)"
+    ]
+  },
+  "impact": {
+    "fees": -400,
+    "gross": 5000,
+    "net": 5400
+  },
+  "orders": 17,
+  "original": {
+    "fees": 990,
+    "gross": -101000,
+    "net": -101990,
+    "positions": {
+      "AAPL": 10
+    }
+  },
+  "with_rules": {
+    "fees": 590,
+    "gross": -96000,
+    "net": -96590,
+    "positions": {
+      "AAPL": -50
+    }
+  }
+}

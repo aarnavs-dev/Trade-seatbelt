@@ -8,10 +8,10 @@ SCOPE = ("Simulated orders only. Verifies the log's hash chain and replays it. I
          "schedule in the rules file passed to the auditor.")
 
 
-def build_report(a: Audit, log_path: str) -> dict:
+def build_report(a: Audit, log_path: str, recon: dict | None = None) -> dict:
     b, led = a.book, a.book.ledger
     ce = a.chain_error
-    return {
+    r = {
         "log": str(log_path),
         "chain": {"ok": ce is None, "events_verified": a.events,
                   "first_bad_seq": ce.seq if ce else None, "reason": ce.reason if ce else None},
@@ -29,6 +29,9 @@ def build_report(a: Audit, log_path: str) -> dict:
         "state_hash": b.state_hash(),
         "scope": SCOPE,
     }
+    if recon is not None:  # key is absent when no broker CSV was given, so older reports are unchanged
+        r["reconciliation"] = recon
+    return r
 
 
 def to_json(r: dict) -> bytes:
@@ -56,5 +59,34 @@ def to_markdown(r: dict) -> str:
           f"- Open positions: {r['positions'] or 'none'}"]
     L += ["", "## Findings", ""]
     L += [f"- seq {f['seq']} {f['kind']}: {f['detail']}" for f in r["findings"]] or ["- none"]
+    if "reconciliation" in r:
+        L += _recon_md(r["reconciliation"])
     L += ["", f"head_hash `{r['head_hash']}`", f"state_hash `{r['state_hash']}`", "", f"_{r['scope']}_", ""]
     return "\n".join(L)
+
+
+def _recon_md(rc: dict) -> list[str]:
+    L = ["", "## Reconciliation against broker CSV", ""]
+    if rc["status"] != "ok":
+        return L + [f"**Not run:** {rc['reason']}"]
+    L.append(f"{rc['log_fills']} ACCEPTED log fills vs {rc['csv_rows']} broker rows from `{rc['csv']}` "
+             f"(tolerance {rc['policy']['tolerance_seconds']}s, inclusive, id-less rows only).")
+    if rc["rejected_rows"]:
+        L += ["", f"**{len(rc['rejected_rows'])} CSV row(s) were unreadable and are NOT in this comparison "
+                  "(lenient mode):**"] + [f"- row {e['row']}: {e['message']}" for e in rc["rejected_rows"]]
+    L += ["", "| Category | Count |", "|---|---:|"] + [f"| {k} | {v} |" for k, v in rc["counts"].items()]
+    L += ["", "| Category | Log seq | CSV row | Detail |", "|---|---|---|---|"]
+    for f in rc["findings"]:
+        if f["category"] == "MATCHED":
+            continue
+        seqs = ", ".join(map(str, f["log_seqs"])) or "-"
+        if f.get("related_log_seqs"):
+            seqs += f" (see {', '.join(map(str, f['related_log_seqs']))})"
+        L.append(f"| {f['category']} | {seqs} | {', '.join(map(str, f['csv_rows'])) or '-'} | {f['detail']} |")
+    d = rc["implied_difference"]
+    pos = ", ".join(f"{s} {q:+d}" for s, q in d["position"].items()) or "none"
+    ex = d["excluded_ambiguous"]
+    L += ["", f"Implied difference (broker minus log): position {pos}; cash {fmt(d['cash_excl_fees'])} "
+              f"(trade notional, fees excluded). Left out: {ex['findings']} AMBIGUOUS finding(s) "
+              f"({ex['log_fills']} log fills, {ex['csv_rows']} rows) that cannot be resolved."]
+    return L

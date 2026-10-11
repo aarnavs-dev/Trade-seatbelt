@@ -10,10 +10,49 @@ What this project does not do, does not guarantee, or has not shown. Measured fi
 - **Reference prices are static** values in `rules.yaml`; the price band is measured against them, not a live market.
 - **No** stock splits or other corporate actions, wash-sale or tax-lot rules, short-borrow costs, FX or multiple currencies.
   P&L is FIFO, in integer cents, with a per-share fee that has a per-order minimum.
-- **Broker reconciliation is not built** (invariant 6 in [INVARIANTS.md](INVARIANTS.md) has no test yet). The brief's `api/`,
-  `web/` and optional Gemini / ElevenLabs / Tiger Data integrations are not built either.
+- The brief's `api/`, `web/` and optional Gemini / ElevenLabs / Tiger Data integrations are **not built**.
 - **Rate limit, daily loss and cooldown** are covered by unit and replay tests, not by the benchmark (it disables the first two
   and exercises the cooldown only in a short epilogue).
+
+## Broker reconciliation and counterfactual
+
+- **The broker CSV layout is our assumption.** Columns `ts, client_order_id (optional), symbol, side, qty, price, fee (optional)`,
+  integer minor units, UTF-8. No real broker export has been parsed; a real one will need a mapping step this project does not have.
+  Anything that does not fit is refused with its row number (row 1 = header) rather than coerced.
+- **Matching tolerance.** Rows with a `client_order_id` match on the id alone; the timestamp is not compared at all, so an id match
+  hours apart is still MATCHED. Rows without an id match on exactly (symbol, side, qty, price) with `|broker ts - log ts| <= 5 s`
+  (inclusive, `--tolerance-seconds`). The 5 s default is a judgment call, not measured: too small makes real fills look missing,
+  too large creates AMBIGUOUS cases. Without an id, a quantity or price difference cannot be told from two different trades, so it
+  shows up as one MISSING_IN_BROKER plus one MISSING_IN_LOG, never as QTY_MISMATCH / PRICE_MISMATCH.
+- **AMBIGUOUS is final.** If an id-less row has several candidate fills (or the reverse), or candidates chain together, nothing is paired,
+  all members are cited, and they are excluded from the implied position/cash difference (their count is reported). The real
+  position and cash difference is therefore only bounded by what the report says it left out.
+- **Duplicates.** Several broker rows with one id that agree on symbol/side/qty/price are treated as one fill reported repeatedly: the
+  earliest pairs with the log, each extra copy is MISSING_IN_LOG (it still counts in the implied difference, because a broker that
+  booked it twice really holds it twice). If they disagree with each other the case is AMBIGUOUS.
+- **What MISSING_IN_LOG can mean.** The broker did something the gate never saw, the gate rejected it (the finding says so), or the
+  log's newest lines were deleted, which this project cannot detect (see tail truncation above). A MISSING_IN_BROKER can equally be
+  an incomplete broker export. The report does not choose between these.
+- **Only full fills.** No partial fills: one log fill is compared with one broker row. A broker splitting a fill into several rows
+  shows as QTY_MISMATCH / AMBIGUOUS / MISSING, never as a sum. Fees are not reconciled and the implied cash difference is trade notional only.
+- **Timezones.** A CSV `ts` must be ISO-8601 with an explicit offset (`Z`, `-04:00`) or integer epoch nanoseconds (19 digits). Times with no
+  offset are refused because the zone would be a guess; integers of any other size are refused because the unit would be a guess. Offsets
+  are converted to UTC nanoseconds exactly. Nothing checks that the offset is the right one: a broker that labels local time as `Z` looks
+  like a systematic skew and will push id-less rows outside the tolerance. The gate log's own `ts` is the gate machine's wall clock.
+- **Lenient mode** (`--lenient`) skips unreadable rows and says so at the top of the report; everything it then calls missing may only
+  be a skipped row. Strict mode (default) fails the whole file at the first bad row. A bad header is fatal in both.
+- **Reconciliation needs a verified log.** If the hash chain is broken the reconciliation is not run at all.
+- **Counterfactual assumptions.** Every accepted order fills fully, immediately, at its CSV price; fees come from `rules.yaml` for both the
+  original and the rules-applied side (the CSV fee column is ignored there); P&L is realized only, open positions are listed but not
+  marked to market and can differ between the two runs; a repeated `client_order_id` is a resend and is ignored, as the gate would.
+  Rows replay in `(ts, CSV row number)` order, so rows with an identical timestamp are decided by file order, and the live gate would
+  have decided by arrival order. The replay uses the CSV timestamp as the time the gate would have stamped. The result describes what
+  the rules would have decided on that sequence; it does not say the trader would have behaved the same after being blocked.
+- **Not a subtraction.** A blocked trade is not applied, so later positions, realized P&L, loss streak and the order window differ and
+  later decisions can change (the fixture has a trade that closes a long in the original and flips the account short with the rules).
+  The report's impact is therefore the difference between two full sequential runs.
+- **Fixture scale.** The hand-computed fixtures have 12 log fills / 14 broker rows and 17 trades. The property tests cover small
+  random scenarios; reconciliation speed on large files was not measured.
 
 ## What the log can and cannot prove
 
