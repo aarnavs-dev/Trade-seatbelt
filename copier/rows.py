@@ -74,15 +74,15 @@ def build_rows(run_dir) -> tuple[list[dict], int, int]:
                "qty": raw.get("qty") if ok else None, "price": raw.get("ref_price") if ok else None,
                "leader_ts": raw.get("leader_ts") if ok else None, "tx": inc.tx, "slot": inc.slot,
                "explorer_url": EXPLORER.format(inc.tx) if inc.tx else None,
-               "gate_seq": None, "ledger_seq": None, "leader_signal": inc.raw if isinstance(inc.raw, dict) else None}
+               "gate_seq": None, "ledger_seq": None, "hash": None, "leader_signal": inc.raw if isinstance(inc.raw, dict) else None}
         if l and l["reason_code"] != CLIPPED:
             p += 1
-            row.update(status=STOPPED, reason_code=l["reason_code"], reason_text=l["reason_text"], ledger_seq=l["seq"])
+            row.update(status=STOPPED, reason_code=l["reason_code"], reason_text=l["reason_text"], ledger_seq=l["seq"], hash=l["hash"])
         else:
             ev = events.get(order_id_for(sid)) if ok else None
             if ev is None:
                 return rows, len(feed), len(L)
-            row.update(qty=ev.qty, price=ev.price, gate_seq=ev.seq)
+            row.update(qty=ev.qty, price=ev.price, gate_seq=ev.seq, hash=ev.hash)
             if ev.decision == "REJECT":
                 row.update(status=REJECTED, reason_code=ev.reason_code, reason_text=plain.get(ev.seq, ev.reason_text))
             elif clip:

@@ -94,15 +94,15 @@ make api     # terminal 1: 127.0.0.1:8000, never on the order path
 make web     # terminal 2: http://127.0.0.1:5173 (Vite proxies /api to the API; needs Node 20+)
 ```
 
-Five pages, light theme, no login. Demo steps, in order:
+Five pages, dark theme with a 3D chain (a 2D version on phones, with reduced motion, or without WebGL), no login. Demo steps, in order:
 
-1. **`/` Landing.** What the product does, how Solana devnet is used (and what it does not do), and an example rejection.
+1. **`/` Landing.** A slow 3D version of the five steps (sample signals, labelled as an illustration), what the product does, how Solana devnet is used (and what it does not do), and an example rejection.
 2. **`/rules`** Pick Cautious, Balanced or Active, or edit the four limits, then **Save**. The API validates them against the
    `rules.yaml` schema and stores them in `profile/rules.json` (gitignored); the repo's `rules.yaml` is never changed. A follow run is
    refused (409) until rules are saved.
 3. **`/follow`** Choose a leader, a source (Auto, Chain (devnet) or Local feed), how much to copy, optional session limits and a pace,
-   then **Start**. Rows appear as signals are processed; click one for the plain-English why. The badge text is read from the run's manifest.
-4. **`/dashboard`** and 5. **`/audit`** are built in the next step (stubs for now). The old `/app` routes redirect to the new pages.
+   then **Start**. Rows appear as signals are processed with a strip of blocks above them (hover a block to highlight its row, click for the drawer); click a row for the plain-English why. The badge text is read from the run's manifest.
+4. **`/dashboard`** (a mini chain, rest to come) and 5. **`/audit`** (the medium chain with Verify and a tamper demo on a copy; the rest to come) are built in the next step. The old `/app` routes redirect to the new pages.
 
 `make follow` and `make follow-chain` do the same from the terminal. `node web/e2e/shots.mjs` (both servers running, `npx playwright install chromium`
 once) saves one screenshot per page and checks the rules-to-follow flow, overflow and text contrast.

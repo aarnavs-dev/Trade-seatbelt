@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { money } from '../lib/format'
 import {
-  DEFAULT_OPTIONS, FILTERS, follow, nyTime, PACES, shortKey, STATUS,
+  DEFAULT_OPTIONS, FILTERS, follow, nyTime, PACES, rowToEvent, shortKey, STATUS,
   type CopyMode, type Explanation, type Feed, type Leader, type Options, type Row, type Status, type Summary,
 } from '../lib/follow'
 import { rules } from '../lib/rules'
+import { ChainStore, useSnap } from '../lib/store'
+import ChainScene from '../scene/ChainScene'
 import { Drawer, Page, Status as StatusText } from './kit'
 
 type Phase = 'idle' | 'starting' | 'running' | 'done' | 'error'
@@ -75,6 +77,10 @@ export default function Follow() {
   const [filter, setFilter] = useState<'ALL' | Status>('ALL')
   const [open, setOpen] = useState<number | null>(null)
   const [setup, setSetup] = useState(!initialRun)
+  // the strip above the feed: the last decisions as blocks, in step with the rows
+  const chain = useMemo(() => new ChainStore({ travelMs: 0, spawnGapMs: 150 }), [])
+  const snap = useSnap(chain)
+  useEffect(() => { if (snap.selected !== null) { setOpen(snap.selected); chain.follow() } }, [snap.selected, chain])
 
   useEffect(() => {
     follow.leaders().then((l) => { setLeaders(l.leaders); setLeaderNote(l.note) }, () => undefined)
@@ -91,6 +97,7 @@ export default function Follow() {
     src.addEventListener('signal', (e) => {
       const r = JSON.parse((e as MessageEvent).data) as Row
       setConn('live'); setPhase('running')
+      chain.push(rowToEvent(r), { animate: true, onchain: !!r.tx })
       setRows((prev) => (prev.some((p) => p.n === r.n) ? prev : [...prev, r]))
     })
     src.addEventListener('end', () => { src.close(); setPhase((p) => (p === 'error' ? p : 'done')); void refresh(run) })
@@ -98,10 +105,10 @@ export default function Follow() {
     const t = setInterval(() => void refresh(run), 1500)
     void refresh(run)
     return () => { src.close(); clearInterval(t) }
-  }, [run, refresh])
+  }, [run, refresh, chain])
 
   const start = async () => {
-    setError(null); setOptError(null); setRows([]); setSummary(null); setOpen(null); setPhase('starting'); setSetup(false)
+    setError(null); setOptError(null); setRows([]); chain.clear(); setSummary(null); setOpen(null); setPhase('starting'); setSetup(false)
     try { setRun((await follow.start(o)).run) }
     catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -208,6 +215,7 @@ export default function Follow() {
                 </p>
               </div>
 
+              {phase !== 'idle' && <div style={{ marginBottom: 'var(--s3)' }}><ChainScene store={chain} variant="strip" label="The last decisions as blocks, newest next to the rules ring" /></div>}
               {phase === 'error' && <div role="alert" data-testid="error-box"><p className="error">{error}</p><button className="btn" style={{ marginTop: 'var(--s2)' }} onClick={start}>Try again</button></div>}
               {phase === 'starting' && <p className="muted" role="status" data-testid="loading">Fetching market data and the leader’s signals. This can take up to a minute.</p>}
               {phase === 'running' && rows.length === 0 && <p className="muted" role="status">Waiting for the first signal…</p>}
@@ -219,7 +227,8 @@ export default function Follow() {
                   <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th className="r">Qty</th><th className="r">Price</th><th>Status</th><th>Reason</th><th>Solana</th></tr></thead>
                   <tbody data-testid="rows">
                     {shown.map((r) => (
-                      <tr key={r.n} className="rowbtn row-in" tabIndex={0} role="button" data-testid="row" data-status={r.status} data-open={open === r.n ? 1 : 0}
+                      <tr key={r.n} className="rowbtn row-in" tabIndex={0} role="button" data-testid="row" data-status={r.status} data-open={open === r.n ? 1 : 0} data-hover={snap.hover === r.n ? 1 : 0}
+                          onMouseEnter={() => chain.hover(r.n)} onMouseLeave={() => chain.hover(null)}
                           aria-label={`Signal ${r.n}: ${STATUS[r.status].label}. Open the explanation.`}
                           onClick={() => setOpen(r.n)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(r.n))}>
                         <td className="num muted">{nyTime(r.leader_ts)}</td>
@@ -250,7 +259,7 @@ export default function Follow() {
           </details>
         </div>
       </div>
-      {run && open !== null && <Explain run={run} n={open} onClose={() => setOpen(null)} />}
+      {run && open !== null && <Explain run={run} n={open} onClose={() => { setOpen(null); chain.select(null); chain.follow() }} />}
     </Page>
   )
 }

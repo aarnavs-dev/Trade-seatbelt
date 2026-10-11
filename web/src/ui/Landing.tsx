@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import ChainScene, { useFlat } from '../scene/ChainScene'
+import { ChainStore } from '../lib/store'
+import { HERO_TRAVEL_MS, startHero } from '../lib/hero'
 import { Page } from './kit'
 
 const REPO = 'https://github.com/aarnavs-dev/Trade-seatbelt'
@@ -73,6 +76,28 @@ function Flow() {
   )
 }
 
+const STEP_TEXT = ['Leader signs a signal', 'Solana devnet records it publicly', 'Your copier verifies the signer', 'Your rules approve or reject', 'Your audit log keeps the proof']
+
+/** The five steps as a slow 3D scene (or the 2D diagram on phones, with reduced motion, or without WebGL). */
+function Hero() {
+  const { flat } = useFlat()
+  const store = useMemo(() => new ChainStore({ travelMs: HERO_TRAVEL_MS, spawnGapMs: 0 }), [])
+  const [caption, setCaption] = useState('Every signal passes through your rules before anything is copied.')
+  useEffect(() => (flat ? undefined : startHero(store, setCaption)), [flat, store])
+  return (
+    <section aria-label="How a signal flows" data-testid="hero-scene">
+      <ChainScene store={store} variant="hero" fallback={<div className="container" style={{ paddingBottom: 'var(--s6)' }}><Flow /></div>} label={`The five steps: ${STEP_TEXT.join(', ')}.`} />
+      {!flat && (
+        <div className="container" style={{ paddingTop: 'var(--s2)' }}>
+          <p className="caption-line" key={caption} data-testid="hero-caption"><span className="caption-fade">{caption}</span></p>
+          <p className="ill">Illustration with sample signals, not live data.</p>
+          <ol className="sr-only">{STEP_TEXT.map((t) => <li key={t}>{t}</li>)}</ol>
+        </div>
+      )}
+    </section>
+  )
+}
+
 const Rule = ({ t, d }: { t: string; d: string }) => <li><span style={{ fontWeight: 500 }}>{t}</span><span className="muted">{d}</span></li>
 
 export default function Landing() {
@@ -90,7 +115,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <div className="container" style={{ paddingBottom: 'var(--s12)' }}><Flow /></div>
+      <Hero />
 
       <section className="section" id="how" ref={how}>
         <div className="container grid12">

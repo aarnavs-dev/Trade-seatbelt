@@ -14,7 +14,7 @@ Rules before the trade, receipts after. A Risk Gate blocks orders that break the
 1. `gate/`  Risk Gate. asyncio TCP server, newline-delimited JSON, single writer, sequence numbers. Hot path. Pure `check()` rules function, no I/O inside it.
 2. `auditor/` Auditor. Separate process. Reads log, verifies hash chain, rebuilds positions/cash, FIFO P&L with fees, reconciliation against a broker CSV, JSON + Markdown report. Deterministic.
 3. `api/` Thin read-only FastAPI for the dashboard (SSE stream of events, report endpoint, counterfactual endpoint). NEVER on the order hot path.
-4. `web/` Vite + React + TypeScript, light theme, no 3D. Pages: `/` landing, `/rules`, `/follow`, `/dashboard`, `/audit`.
+4. `web/` Vite + React + TypeScript, dark theme with a restrained 3D chain (three.js, lazy). Pages: `/` landing, `/rules`, `/follow`, `/dashboard`, `/audit`.
 5. `core/` Shared: event schema, hash chain, rules, FIFO ledger. Gate and auditor both import it.
 6. `bench/`, `tests/`, `fixtures/`, `docs/`.
 
@@ -35,7 +35,7 @@ max_position_per_symbol, max_daily_loss, price_band_pct vs reference price, max_
 6. Ambiguous or missing evidence in reconciliation is never guessed. It is reported as AMBIGUOUS (several candidates, none paired), MISSING_IN_BROKER or MISSING_IN_LOG (no counterpart). These are the "unknown" cases; QTY_MISMATCH / PRICE_MISMATCH / MATCHED are only used when an id or a unique candidate pairs the items.
 
 ## Stack decisions
-Python 3.12, uvloop, orjson, pytest, hypothesis, FastAPI. Frontend: Vite, React, TS, plain CSS on design tokens (no Tailwind, no three.js, no framer-motion). Docker for benchmark limits (1 vCPU, 512 MB).
+Python 3.12, uvloop, orjson, pytest, hypothesis, FastAPI. Frontend: Vite, React, TS, plain CSS on design tokens, three.js + @react-three/fiber + drei for the chain scenes (no Tailwind, no framer-motion). Docker for benchmark limits (1 vCPU, 512 MB).
 
 ## Optional sponsor integrations (all behind interfaces, all disabled by default, app must run fully offline without keys)
 - Gemini API: explains a REJECT or an audit finding in plain English. Input = structured facts only (event fields, rule, limit). Output must cite event seq numbers. AI can never change a decision, a number, or a report. Show "AI-generated, facts above are deterministic".

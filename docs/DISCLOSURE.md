@@ -65,14 +65,17 @@ the code has no order endpoint, and the keys are never logged or written to a ru
 HTTP client, never against the live service.
 
 **Front end (`web/`, npm).** Versions and licenses are read from `web/package.json` and each installed package's own `package.json`
-(`license` field) in `web/node_modules`. The 3D scene and everything that only it needed were removed in the UI rebuild: `three`,
-`@react-three/fiber`, `@react-three/drei`, `framer-motion`, `@types/three`, `tailwindcss` and `@tailwindcss/vite` (and their transitive packages).
-The pages are plain CSS on design tokens (CSS variables), React and TypeScript.
+(`license` field) in `web/node_modules`. The UI was rebuilt twice: first to a light theme without 3D (Tier A), then restyled back to
+a dark theme with a 3D chain (this version). Tailwind and `framer-motion` were dropped and are not used: the pages are plain CSS on
+design tokens (CSS variables); the only motion libraries are three.js and React Three Fiber, and the 150 ms row fade is CSS.
 
-Runtime dependencies (they ship to the browser):
+Runtime dependencies (they ship to the browser; the three.js chunk is loaded only on pages that show a 3D scene):
 
 | Package | Version | Used for | License per package.json |
 |---|---|---|---|
+| three | 0.186.1 | 3D rendering of the chain scenes (lazy chunk) | MIT |
+| @react-three/fiber | 9.8.1 | React renderer for three.js | MIT |
+| @react-three/drei | 10.7.9 | helpers; only `PerformanceMonitor` is imported | MIT |
 | @fontsource-variable/newsreader | 5.3.0 | headline serif (Newsreader, Production Type), bundled | OFL-1.1 |
 | @fontsource-variable/inter | 5.3.0 | UI sans (Inter, Rasmus Andersson), bundled | OFL-1.1 |
 | @fontsource-variable/jetbrains-mono | 5.3.0 | monospace for numbers, hashes and addresses (JetBrains Mono), bundled | OFL-1.1 |
@@ -81,7 +84,10 @@ Runtime dependencies (they ship to the browser):
 
 All three fonts are self-hosted from the bundle (Fontsource packages), so no page makes a request to a font CDN. Each font is licensed
 under the SIL Open Font License 1.1, which allows bundling and redistribution; the license text is in each package's `LICENSE` file.
-`scheduler` (MIT) is the only transitive runtime package (a dependency of React).
+The 3D scenes draw plain geometry and text labels: no Solana logo, brand colors or third-party artwork is used; "Solana" appears as text only.
+
+Transitive runtime packages (56, installed beneath the ones above, mostly by `@react-three/drei`; read the same way): MIT 46, Apache-2.0 5,
+ISC 3, BSD-3-Clause 1, and one with no `license` field in its `package.json`: `webgl-constants` 1.1.1, whose `LICENSE` file (read directly) is the MIT license.
 
 Development dependencies (build, test and the Playwright check; none ships to the browser):
 
@@ -90,13 +96,14 @@ Development dependencies (build, test and the Playwright check; none ships to th
 | @types/node | 26.6.5 | MIT |
 | @types/react | 19.3.0 | MIT |
 | @types/react-dom | 19.3.0 | MIT |
+| @types/three | 0.186.0 | MIT |
 | @vitejs/plugin-react | 6.1.2 | MIT |
 | playwright | 1.64.0 | Apache-2.0 |
 | typescript | 7.0.2 | Apache-2.0 |
 | vite | 8.3.4 | MIT |
 | vitest | 4.1.11 | MIT |
 
-The 47 further packages installed beneath those (development tooling; read the same way): MIT 40, Apache-2.0 4, ISC 2, BSD-3-Clause 1.
+The 45 further packages installed beneath those (development tooling; read the same way): MIT 38, Apache-2.0 4, ISC 2, BSD-3-Clause 1.
 Platform-specific optional binaries that npm does not install on every machine are not counted. The charting library for the
 dashboard (uPlot) is not installed yet; it is added with the dashboard page.
 
@@ -150,5 +157,5 @@ The `/follow` page and `api/follow.py` add no service, key or dependency: the AP
 subprocess and reads the run's files. Explanations are deterministic text, not AI. Execution is paper only.
 
 The `/rules` page stores your four limits in a runtime profile file (`profile/rules.json`, gitignored); `/follow` adds session limits,
-copy sizing and a seeded pace, all local to the copier. The landing page's flow animation is plain CSS/SVG. Signals are published
+copy sizing and a seeded pace, all local to the copier. The landing hero is a three.js scene (sample signals with real SHA-256 hashes, labelled as an illustration); its 2D fallback is plain CSS/SVG. Signals are published
 to Solana devnet (a test network); fills are paper. No AI is used anywhere in these pages.

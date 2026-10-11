@@ -1,4 +1,4 @@
-// Playwright check of the new pages: one screenshot per page at 1440 (and / and /follow at 390), overflow and contrast audits,
+// Playwright check of the dark pages with the 3D chain: one screenshot per page at 1440 (and / and /follow at 390), overflow and contrast audits,
 // and the rules -> follow flow. Needs `make api` and `make web` running. BASE=http://127.0.0.1:5173
 import { chromium } from 'playwright'
 import { mkdirSync } from 'node:fs'
@@ -17,19 +17,19 @@ const audit = () => {
     if (r.width === 0 || r.height === 0) continue
     let scroller = false
     for (let e = el; e; e = e.parentElement) { const o = getComputedStyle(e).overflowX; if ((o === 'auto' || o === 'scroll') && e !== document.documentElement) scroller = true }
-    if ((r.right > vw + 1 || r.left < -1) && !scroller && !el.closest('svg')) overflow.push(`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 30)} [${Math.round(r.left)}..${Math.round(r.right)}]`)
+    if ((r.right > vw + 1 || r.left < -1) && !scroller && !el.closest('svg') && !el.closest('.label-layer')) overflow.push(`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 30)} [${Math.round(r.left)}..${Math.round(r.right)}]`)
   }
   const lum = (c) => { const f = (v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]) }
   const parse = (s) => { const m = s.match(/[\d.]+/g)?.map(Number); if (!m || m.length < 3) return null; const k = s.startsWith('color(srgb') ? 255 : 1; return [m[0] * k, m[1] * k, m[2] * k, m[3] ?? 1] }
-  const bg = [250, 248, 243]
+  const bg = [8, 10, 14]
   const low = [], seen = new Set()
   for (const el of document.querySelectorAll('body *')) {
     const own = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => n.textContent.trim()).join(' ')
     if (!own) continue
     const cs = getComputedStyle(el)
-    if (el.getBoundingClientRect().width === 0 || cs.visibility === 'hidden' || el.closest(':disabled') || el.closest('svg')) continue
+    if (el.getBoundingClientRect().width === 0 || cs.visibility === 'hidden' || el.closest(':disabled') || el.closest('svg') || el.closest('.label-layer')) continue
     const c = parse(cs.color); if (!c) continue
-    const back = el.closest('.btn-primary') ? [42, 75, 179] : bg   // the primary button's own fill
+    const back = el.closest('.btn-primary') ? [92, 200, 255] : bg   // the primary button's own fill
     const fg = [0, 1, 2].map((i) => c[i] * c[3] + back[i] * (1 - c[3]))
     const ratio = (Math.max(lum(fg), lum(back)) + 0.05) / (Math.min(lum(fg), lum(back)) + 0.05)
     const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700)
@@ -39,7 +39,7 @@ const audit = () => {
 }
 const report = (a, w) => { check(a.sw <= a.cw && a.overflow.length === 0, `${w}: no horizontal overflow ${a.overflow.slice(0, 3).join('; ')}`); check(a.low.length === 0, `${w}: text contrast ok ${a.low.slice(0, 5).join('; ')}`) }
 
-const browser = await chromium.launch()
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] })
 const errors = []
 const watch = (page) => { page.on('pageerror', (e) => errors.push(e.message)); page.on('console', (m) => m.type() === 'error' && !/status of (4\d\d)/.test(m.text()) && errors.push(m.text())) }
 let run
@@ -49,8 +49,10 @@ let run
   await page.goto(BASE + '/'); await page.waitForSelector('[data-testid=cta-rules]')
   check((await page.textContent('h1')) === 'Follow any trader, but never beyond your own limits.', '/: the headline is exact')
   check((await page.textContent('[data-testid=net-indicator]')).includes('Devnet · Paper trading'), '/: the persistent "Devnet · Paper trading" indicator is in the top bar')
-  await page.waitForFunction(() => document.querySelectorAll('.sig').length > 0, null, { timeout: 8000 }); check(true, '/: dots travel along the flow')
-  await page.waitForFunction(() => /^Stopped:/.test(document.querySelector('[data-testid=flow-caption]')?.textContent ?? ''), null, { timeout: 25000 }); check(true, '/: a dot stops at "Your rules" and the caption shows a stop reason')
+  await page.waitForSelector('[data-testid=chainscene-hero][data-mode="3d"] canvas', { timeout: 30000 }); check(true, '/: the 3D hero scene mounts (a canvas)')
+  await page.waitForFunction(() => /^Stopped:/.test(document.querySelector('[data-testid=hero-caption]')?.textContent ?? ''), null, { timeout: 40000 }); check(true, '/: a rejected signal stops at the rules ring and the caption shows a stop reason')
+  check((await page.locator('.lbl-step').count()) === 5, '/: five step labels sit under the scene')
+  await page.waitForTimeout(500)   // let the caption's 150 ms fade finish
   await page.screenshot({ path: OUT + 'landing-1440.png', fullPage: true }); report(await page.evaluate(audit), '1440 /')
   // rules
   await page.goto(BASE + '/rules'); await page.waitForSelector('[data-testid=live-sentence]')
@@ -73,12 +75,24 @@ let run
   await page.waitForFunction(() => /finished/.test(document.querySelector('[data-testid=strip]')?.textContent ?? ''), null, { timeout: 120000 })
   check(await page.isVisible('[data-testid=badge-data]') && await page.isVisible('[data-testid=badge-feed]'), '/follow: the source badges are shown')
   check((await page.textContent('[data-testid=badge-feed]')) === 'local feed', '/follow: the feed badge is the manifest text')
+  check(await page.isVisible('[data-testid=chainscene-strip][data-mode="3d"] canvas'), '/follow: the 3D strip is shown above the feed')
   const rej = page.locator('[data-testid=row][data-status=REJECTED_BY_RULES]').first()
   if (await rej.count()) { await rej.click(); await page.waitForSelector('[data-testid=explain-detail]'); check(true, '/follow: a row opens its explanation in the drawer') }
   await page.mouse.move(100, 880); await page.waitForTimeout(400)
   await page.screenshot({ path: OUT + 'follow-1440.png', fullPage: true }); report(await page.evaluate(audit), '1440 /follow')
   run = new URL(await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((u) => u.includes('/stream')).pop())).pathname.split('/')[3]
-  for (const p of ['/dashboard', '/audit']) { await page.goto(BASE + p); await page.waitForSelector('h1'); await page.screenshot({ path: OUT + `${p.slice(1)}-1440.png` }); report(await page.evaluate(audit), `1440 ${p}`) }
+  // strip <-> rows, checked on the 2D chain (the same store and wiring)
+  await page.goto(BASE + '/follow?view=2d&run=' + run); await page.waitForSelector('[data-testid=row]'); await page.waitForSelector('g[role=listitem]')
+  await page.hover('g[role=listitem] >> nth=0'); await page.waitForTimeout(150)
+  check((await page.locator('[data-testid=row][data-hover="1"]').count()) === 1, '/follow: hovering a block highlights its row')
+  await page.click('g[role=listitem] >> nth=0'); await page.waitForSelector('[data-testid=drawer]'); check(true, '/follow: clicking a block opens the drawer')
+  await page.goto(BASE + '/dashboard'); await page.waitForSelector('h1'); await page.waitForTimeout(1500); await page.screenshot({ path: OUT + 'dashboard-1440.png' }); report(await page.evaluate(audit), '1440 /dashboard')
+  await page.goto(BASE + '/audit'); await page.waitForSelector('[data-testid=btn-demo]')
+  await page.click('[data-testid=btn-demo]'); await page.waitForFunction(() => /\d+ blocks in this log/.test(document.querySelector('[data-testid=verifier-message]')?.textContent ?? ''), null, { timeout: 60000 })
+  await page.click('[data-testid=btn-verify]'); await page.waitForFunction(() => /^chain intact/.test(document.querySelector('[data-testid=verifier-message]')?.textContent ?? ''), null, { timeout: 15000 }); check(true, '/audit: Verify reports an intact chain')
+  await page.click('[data-testid=btn-tamper]'); await page.waitForFunction(() => /chain broken at seq \d+/.test(document.querySelector('[data-testid=verifier-message]')?.textContent ?? ''), null, { timeout: 15000 }); check(true, '/audit: the tamper demo names the exact bad seq')
+  await page.waitForTimeout(3000); await page.screenshot({ path: OUT + 'audit-1440.png' }); report(await page.evaluate(audit), '1440 /audit')
+  await page.click('[data-testid=btn-reset]'); check(!(await page.textContent('[data-testid=verifier-message]')).includes('broken'), '/audit: Reset restores the chain')
   await page.goto(BASE + '/app/follow'); await page.waitForURL('**/follow'); check(true, 'old route /app/follow redirects to /follow')
   await page.goto(BASE + '/app'); await page.waitForURL('**/dashboard'); check(true, 'old route /app redirects to /dashboard')
   await page.close()

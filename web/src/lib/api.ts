@@ -29,5 +29,15 @@ export async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T
 }
 
+import type { DemoStatus, Report, Source, TamperResult } from './types'
+
+export const api = {
+  report: (source: Source) => call<Report>(`/report?source=${source}`),
+  tamper: (source: Source) => call<TamperResult>(`/tamper?source=${source}`, { method: 'POST' }),
+  demoRun: (delayMs = 130) => call<DemoStatus>(`/demo/run?delay_ms=${delayMs}`, { method: 'POST' }),
+  demoStatus: () => call<DemoStatus>('/demo/status'),
+  streamUrl: (source: Source, tail = 400) => `${BASE}/events/stream?source=${source}&tail=${tail}`,
+}
+
 export const json = (method: string, body: unknown): RequestInit => ({ method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 export const API_BASE = BASE

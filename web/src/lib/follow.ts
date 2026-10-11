@@ -1,4 +1,5 @@
 import { API_BASE, call, json } from './api'
+import type { LogEvent } from './types'
 
 export type Status = 'COPIED' | 'STOPPED_BY_COPIER' | 'REJECTED_BY_RULES' | 'CLIPPED'
 export type Feed = 'auto' | 'chain' | 'local'
@@ -21,6 +22,7 @@ export interface Row {
   tx: string | null
   slot: number | null
   explorer_url: string | null
+  hash: string | null
 }
 
 export interface Summary {
@@ -110,6 +112,14 @@ export function toRequest(o: Options) {
 export function nyTime(ms: number | null): string {
   if (ms === null) return '--:--'
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms))
+}
+
+/** A follow row as a chain block: copied/clipped orders are accepted blocks, everything stopped or rejected is a rejected one. */
+export function rowToEvent(r: Row): LogEvent {
+  return {
+    seq: r.n, ts: (r.leader_ts ?? 0) * 1e6, client_order_id: r.signal_id, symbol: r.symbol ?? '', side: r.side ?? 'BUY', qty: r.qty ?? 0, price: r.price ?? 0,
+    decision: r.status === 'COPIED' || r.status === 'CLIPPED' ? 'ACCEPT' : 'REJECT', reason_code: r.reason_code, reason_text: r.reason_text, prev_hash: '', hash: r.hash ?? '',
+  }
 }
 
 export const shortKey = (k: string) => `${k.slice(0, 4)}…${k.slice(-4)}`

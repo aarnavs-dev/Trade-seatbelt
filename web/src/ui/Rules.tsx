@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { formFrom, PRESET_NAMES, rules, sentence, type Form, type RulesState } from '../lib/rules'
+import { ChainStore } from '../lib/store'
+import { sampleChain } from '../lib/hero'
+import ChainScene from '../scene/ChainScene'
 import { Page } from './kit'
 
 type Load = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready'; state: RulesState }
@@ -22,6 +25,8 @@ export default function Rules() {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const line = useMemo(() => new ChainStore(), [])
+  useEffect(() => { void sampleChain(line, 14) }, [line])
 
   const fetchRules = () => {
     setLoad({ kind: 'loading' })
@@ -46,6 +51,7 @@ export default function Rules() {
   const state = load.kind === 'ready' ? load.state : null
   return (
     <Page title="Rules">
+      <ChainScene store={line} variant="line" label="A line of sample blocks, decoration only" />
       <div className="container" style={{ padding: 'var(--s8) var(--gutter) var(--s12)' }}>
         <div className="grid12">
           <div className="c-1-7 stack-lg">
