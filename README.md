@@ -23,7 +23,12 @@ make demo      # client -> gate -> log -> auditor -> report, then tamper checks
 make test      # unit, property-based (Hypothesis), durability and tamper tests
 make bench     # benchmark (native); BENCH_N=20000 BENCH_REPS=1 make bench for a quick run
 make bench-docker   # same matrix with the gate in a 1 CPU / 512 MB container (needs Docker)
+make bench-report FINAL=bench/results/final_<stamp>.json [DOCKER=bench/results/docker_<stamp>.json]
 ```
+
+`make bench` and `make bench-docker` write raw results to `bench/results/*.json` and a fresh report to
+`bench/results/PERFORMANCE_latest.md` (not committed). They never touch the committed `docs/PERFORMANCE.md`, which is
+the reported 100k-order run. Only `make bench-report` writes `docs/PERFORMANCE.md`, and only from the result files you name.
 
 `make demo` writes everything under `out/demo/` (`gate.log`, `report.md`, `report.json`).
 
@@ -52,7 +57,7 @@ Not built yet: the broker-CSV reconciliation, `api/`, `web/`, and the optional G
 
 ## Results and docs
 
-- Performance (native and Docker, measured): [docs/PERFORMANCE.md](docs/PERFORMANCE.md); raw data in `bench/results/*.json`.
+- Performance (native and Docker, measured; the committed 100k-order run): [docs/PERFORMANCE.md](docs/PERFORMANCE.md); raw data in `bench/results/*.json`; your own run: `bench/results/PERFORMANCE_latest.md`.
 - Invariants and the tests that try to break them: [docs/INVARIANTS.md](docs/INVARIANTS.md)
 - Limitations and the next bottleneck: [docs/LIMITATIONS.md](docs/LIMITATIONS.md)
 - What we built vs. what we used: [docs/DISCLOSURE.md](docs/DISCLOSURE.md)

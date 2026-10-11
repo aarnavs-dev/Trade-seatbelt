@@ -18,7 +18,8 @@ async def main(args) -> None:
         raise SystemExit(f"refusing to start: {e}")
     server = await start_server(gate, args.host, args.port)
     print(f"gate listening on {args.host}:{args.port} log={args.log} fsync={args.fsync}{'+F_FULLFSYNC' if args.full_fsync else ''} "
-          f"batch_max={gate.batch_max} replayed_events={gate.book.last_seq}", flush=True)
+          f"batch_max={gate.batch_max} replayed_events={gate.book.last_seq} "
+          f"torn_tail_bytes_removed={gate.recovery_note['bytes_removed'] if gate.recovery_note else 0}", flush=True)
     stop = asyncio.Event()
     profile_path = os.environ.get("GATE_PROFILE")  # benchmark hook, off by default
     if profile_path:
@@ -30,7 +31,8 @@ async def main(args) -> None:
     await stop.wait()
     server.close()
     await gate.stop()
-    print(f"gate stopped at seq {gate.book.last_seq} head={gate.book.last_hash}", flush=True)
+    print(f"gate stopped at seq {gate.book.last_seq} head={gate.book.last_hash} "
+          f"state_hash={gate.book.state_hash()}", flush=True)
 
 
 if __name__ == "__main__":

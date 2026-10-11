@@ -265,8 +265,10 @@ def interpretation(nat, dock):
                "Gate process killed: the bytes are already in the OS page cache, so they survive. OS crash / power loss: every event "
                "the OS had not yet flushed is lost, including acknowledged ones, and the last line may be partial. How much depends on "
                "OS writeback timing and was not measured."]]),
-          "A crash in the middle of a write can leave a partial last line in any policy; the gate then refuses to start "
-          "(`partial last line`) until the log is repaired. There is no automatic repair yet.", "",
+          "A crash in the middle of a write can leave a partial last line in any policy. On restart the gate removes only that "
+          "partial line (it was never acknowledged, because replies follow the completed write), keeps the removed bytes in "
+          "`<log>.torn.<ns>` and notes it in `<log>.recovery.jsonl`; any other corruption makes it refuse to start. "
+          "Process crashes (`SIGKILL`) are tested; power loss is not.", "",
           "### What would break or need redesign next", ""]
     rec = nat["recovery"]
     ok = [r for r in rec if r.get("outcome", "OK") == "OK"]
@@ -345,14 +347,16 @@ def build(nat, dock, before, after, plain=None, full=None, micro=None) -> str:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=os.path.join(ROOT, "docs", "PERFORMANCE.md"))
-    ap.add_argument("--native", default="final")
-    ap.add_argument("--docker", default="docker")
+    ap.add_argument("--out", default=os.path.join(RES, "PERFORMANCE_latest.md"),
+                    help="default is bench/results/PERFORMANCE_latest.md; the committed docs/PERFORMANCE.md "
+                         "is only written by `make bench-report`")
+    ap.add_argument("--native-file", help="a specific final_*.json (default: the newest)")
+    ap.add_argument("--docker-file", help="a specific docker_*.json (default: the newest, if any)")
     a = ap.parse_args()
-    nat = newest(a.native)
+    nat = json.load(open(a.native_file)) if a.native_file else newest("final")
     if not nat:
         raise SystemExit("no bench/results/final_*.json; run make bench first")
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
-    open(a.out, "w").write(build(nat, newest(a.docker), newest("before_opt"), newest("after_opt"),
+    open(a.out, "w").write(build(nat, json.load(open(a.docker_file)) if a.docker_file else newest("docker"), newest("before_opt"), newest("after_opt"),
                                    newest("fsync_plain"), newest("fsync_full"), newest("fsync_micro")))
     print(f"wrote {a.out}")

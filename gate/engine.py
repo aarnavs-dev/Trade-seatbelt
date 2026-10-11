@@ -7,7 +7,7 @@ import orjson
 from pydantic import ValidationError
 
 from core.events import Event, Order
-from core.logio import LogWriter, event_line, scan
+from core.logio import LogWriter, event_line, repair_torn_tail, scan
 from core.book import Book
 
 
@@ -37,8 +37,10 @@ class Gate:
         self.queue_size = queue_size
         self.book = Book(rules)
         self.closed = True
+        self.recovery_note = None
 
     async def start(self) -> None:
+        self.recovery_note = repair_torn_tail(self.log_path)  # only a partial last line is repaired
         for ev in scan(self.log_path):  # rebuild state; refuses to start on a broken chain
             self.book.apply(ev)
         self.writer = LogWriter(self.log_path, self.fsync, self.full_fsync)

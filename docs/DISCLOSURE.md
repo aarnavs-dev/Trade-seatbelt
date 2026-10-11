@@ -12,22 +12,38 @@ and tested here. Numbers in `docs/PERFORMANCE.md` come from running the benchmar
 
 ## Libraries and tools used
 
-| Name | Used for | License (as published by the project) |
-|---|---|---|
-| Python 3.12 | runtime | PSF License |
-| orjson | canonical JSON, fast (de)serialisation | Apache-2.0 OR MIT |
-| pydantic v2 | strict event / order / rules models | MIT |
-| PyYAML | loading `rules.yaml` | MIT |
-| uvloop | event loop for the gate and load generator | Apache-2.0 OR MIT |
-| pytest | tests | MIT |
-| Hypothesis | property-based tests | MPL-2.0 |
-| psutil | benchmark CPU / memory sampling | BSD-3-Clause |
-| GNU Make | task runner | GPL-3.0 (a tool, not distributed with this project) |
-| Docker (Docker Desktop, Docker Engine), `python:3.12-slim` image | benchmark under CPU / memory limits | Docker Desktop: Docker's subscription terms; Engine: Apache-2.0; image: PSF + Debian licenses |
-| Homebrew | installing Python / Docker on the dev machine | BSD-2-Clause |
-| Python standard library (`asyncio`, `hashlib`, `cProfile`, `pstats`, ...) | everywhere | PSF License |
+**Python packages** (licenses and versions read from each installed package's own metadata with
+`importlib.metadata` in this project's virtualenv, which is also what the Docker image installs — same versions):
 
-Licenses are listed from what we know of each project and were not re-verified against each release.
+| Package | Version | Used for | License per package metadata |
+|---|---|---|---|
+| orjson | 3.13.0 | canonical JSON, fast (de)serialisation | `MPL-2.0 AND (Apache-2.0 OR MIT)` |
+| pydantic | 2.14.0 | strict event / order / rules models | MIT |
+| pydantic-core | 2.50.0 | (pydantic dependency) | MIT |
+| annotated-types | 0.8.0 | (pydantic dependency) | MIT |
+| typing-inspection | 0.4.4 | (pydantic dependency) | MIT |
+| typing-extensions | 4.16.0 | (pydantic dependency) | PSF-2.0 |
+| PyYAML | 6.0.3 | loading `rules.yaml` | MIT |
+| uvloop | 0.23.0 | event loop for the gate and load generator | `MIT License` in its License field; its classifiers list both Apache Software License and MIT License |
+| pytest | 9.1.1 | tests | MIT |
+| pluggy / iniconfig | 1.6.0 / 2.3.1 | (pytest dependencies) | MIT / MIT |
+| packaging | 26.3 | (pytest dependency) | `Apache-2.0 OR BSD-2-Clause` |
+| pygments | 2.21.0 | (pytest dependency) | BSD-2-Clause |
+| Hypothesis | 6.168.5 | property-based tests | MPL-2.0 |
+| sortedcontainers | 2.4.0 | (Hypothesis dependency) | Apache 2.0 |
+| psutil | 7.2.2 | benchmark CPU / memory sampling | BSD-3-Clause |
+
+setuptools is the build backend named in `pyproject.toml`; it is not installed in the virtualenv, so its license was not checked.
+
+**Other tools — licenses NOT read from package metadata** (these are not Python packages; stated from general knowledge, not verified here):
+
+| Tool | Used for | License as we understand it |
+|---|---|---|
+| Python 3.12 (standard library: `asyncio`, `hashlib`, `cProfile`, `fcntl`, ...) | runtime | PSF License |
+| GNU Make 3.81 (the version macOS ships) | task runner | GPL-2.0-or-later (a tool, not distributed with this project) |
+| Docker Desktop 4.94 / Docker Engine 29.8.2 | benchmark under CPU / memory limits | Docker Desktop: Docker's subscription terms; Engine: Apache-2.0 |
+| `python:3.12-slim` image | base of the benchmark container | Python: PSF; Debian packages: various |
+| Homebrew | installing Python / Docker on the dev machine | BSD-2-Clause |
 
 ## Not used
 

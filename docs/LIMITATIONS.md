@@ -38,8 +38,12 @@ What this project does not do, does not guarantee, or has not shown. Measured fi
   comparison `per_order` dropped to about 250–290 orders/s and pipelined `batched` to about 16k–39k orders/s (see PERFORMANCE.md).
   Neither was tested by cutting power.
 - **`fsync = none` is not durable** and is labelled as such everywhere; it exists to show what fsync costs.
-- **A crash mid-write can leave a partial last line.** The gate then refuses to start (`partial last line`) until the file is
-  repaired by hand; there is no automatic repair.
+- **Only process crashes are tested** (`kill -9`, `tests/test_crash_recovery.py`). Power loss and OS crashes are not: a killed
+  process leaves its `write()`s in the kernel, so those tests do not exercise fsync at all.
+- **Torn tail policy.** A crash mid-write can leave a partial last line. On restart the gate removes just that partial line
+  (it cannot have been acknowledged, since replies follow the completed write), saves the removed bytes to `<log>.torn.<ns>`
+  and appends a note to `<log>.recovery.jsonl`. The note lives outside the hash chain, like the rest of the file's surroundings.
+  Any other corruption makes the gate refuse to start. The auditor never repairs; it reports `partial last line`.
 - **If an fsync fails, the gate stops** rather than acknowledge; its in-memory state is then ahead of the log, so it must be
   restarted from the log.
 

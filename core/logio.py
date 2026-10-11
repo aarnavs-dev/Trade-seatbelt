@@ -1,7 +1,9 @@
 """Append-only log: writer with a fsync policy, and a verifying reader."""
 
+import hashlib
 import os
 import sys
+import time
 from typing import Iterator
 
 from pydantic import ValidationError
@@ -55,6 +57,52 @@ def scan(path) -> Iterator[Event]:
                 raise ChainError(expected, "line is not in canonical form")
             prev, expected = ev.hash, expected + 1
             yield ev
+
+
+def repair_torn_tail(path) -> dict | None:
+    """Remove a partial last line (bytes after the final newline), keeping the bytes.
+
+    Safe for the durability promise: a reply is only sent after the whole batch write and fsync
+    returned, so a line that is missing its newline was never acknowledged. Only a missing-newline
+    tail is touched; any other corruption is left for scan() to reject. The removed bytes go to
+    `<log>.torn.<ns>` and a note to `<log>.recovery.jsonl` (outside the hash chain). The auditor
+    never repairs: it reports the same file as `partial last line`.
+    """
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        return None
+    with open(path, "rb+") as f:
+        size = f.seek(0, 2)
+        f.seek(size - 1)
+        if f.read(1) == b"\n":
+            return None
+        cut, pos = 0, size
+        while pos > 0:  # find the last newline, scanning backwards
+            start = max(0, pos - 65536)
+            f.seek(start)
+            i = f.read(pos - start).rfind(b"\n")
+            if i != -1:
+                cut = start + i + 1
+                break
+            pos = start
+        f.seek(cut)
+        torn = f.read()
+        ns = time.time_ns()
+        sidecar = f"{path}.torn.{ns}"
+        with open(sidecar, "wb") as t:
+            t.write(torn)
+            t.flush()
+            os.fsync(t.fileno())
+        note = {"action": "truncated_torn_tail", "wall_time_ns": ns, "log_size_before": size,
+                "kept_bytes": cut, "bytes_removed": len(torn), "removed_sha256": hashlib.sha256(torn).hexdigest(),
+                "removed_saved_as": os.path.basename(sidecar)}
+        with open(f"{path}.recovery.jsonl", "ab") as r:
+            r.write(canon(note) + b"\n")
+            r.flush()
+            os.fsync(r.fileno())
+        f.truncate(cut)
+        f.flush()
+        os.fsync(f.fileno())
+    return note
 
 
 class LogWriter:

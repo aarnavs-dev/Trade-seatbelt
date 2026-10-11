@@ -329,7 +329,7 @@ Same machine, same workload and seed, same load generator; only where the gate r
 | `batched` (group commit, up to 256 events per fsync) | After the whole batch was written and fsynced. | The same guarantee as `per_order` for acknowledged orders; it is cheaper because one fsync covers many events. A reply can wait for the rest of its batch. |
 | `none` **(NON-DURABLE)** | After `os.write`, never fsynced. | Gate process killed: the bytes are already in the OS page cache, so they survive. OS crash / power loss: every event the OS had not yet flushed is lost, including acknowledged ones, and the last line may be partial. How much depends on OS writeback timing and was not measured. |
 
-A crash in the middle of a write can leave a partial last line in any policy; the gate then refuses to start (`partial last line`) until the log is repaired. There is no automatic repair yet.
+A crash in the middle of a write can leave a partial last line in any policy. On restart the gate removes only that partial line (it was never acknowledged, because replies follow the completed write), keeps the removed bytes in `<log>.torn.<ns>` and notes it in `<log>.recovery.jsonl`; any other corruption makes it refuse to start. Process crashes (`SIGKILL`) are tested; power loss is not.
 
 ### What would break or need redesign next
 
