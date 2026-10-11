@@ -59,6 +59,8 @@ class Finding:
             d["related_log_seqs"] = sorted(self.related)
         if self.differs:
             d["differs"] = self.differs
+        if self.category == "AMBIGUOUS":  # so totals can be reconciled by hand
+            d["group"] = {"log_fills": len(self.logs), "broker_rows": len(self.rows)}
         return d
 
 

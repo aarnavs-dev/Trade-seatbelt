@@ -32,7 +32,7 @@ max_position_per_symbol, max_daily_loss, price_band_pct vs reference price, max_
 3. Cash + positions reconcile after every fill; no float money.
 4. Duplicate client_order_id returns the original decision and never double-counts.
 5. Any edit, deletion or reordering of a log line is detected and the first bad seq is reported.
-6. Ambiguous or missing evidence in reconciliation is reported as UNKNOWN, never guessed.
+6. Ambiguous or missing evidence in reconciliation is never guessed. It is reported as AMBIGUOUS (several candidates, none paired), MISSING_IN_BROKER or MISSING_IN_LOG (no counterpart). These are the "unknown" cases; QTY_MISMATCH / PRICE_MISMATCH / MATCHED are only used when an id or a unique candidate pairs the items.
 
 ## Stack decisions
 Python 3.12, uvloop, orjson, pytest, hypothesis, FastAPI. Frontend: Vite, React, TS, @react-three/fiber, drei, framer-motion, Tailwind. Docker for benchmark limits (1 vCPU, 512 MB).

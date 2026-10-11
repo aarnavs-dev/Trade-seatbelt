@@ -71,12 +71,14 @@ check("live gate decisions", mine, live_dec)
 c = rc["counts"]
 pos = ", ".join(f"{s} {q:+d}" for s, q in d["position"].items())
 ex = d["excluded_ambiguous"]
+ex_l, ex_r = ex['log_fills'], ex['csv_rows']
 yes = lambda prefix: "YES" if not [b for b in bad if b.startswith(prefix)] else "NO  <-- see MISMATCH above"
 p = cf["pnl"]
 print(f"""RECONCILIATION  gate log vs broker CSV: {rc['log_fills']} ACCEPTED log fills, {rc['csv_rows']} broker rows
   {' | '.join(f'{k} {c[k]}' for k in CATEGORIES)}
   implied difference (broker minus log): {pos} shares; cash {fmt(d['cash_excl_fees'])} (fees excluded);
   {ex['findings']} AMBIGUOUS case left unresolved on purpose
+  accounting: {sum(len(f['log_seqs']) for f in rc['findings'])}/{rc['log_fills']} log fills and {sum(len(f['csv_rows']) for f in rc['findings'])}/{rc['csv_rows']} broker rows accounted for (each in exactly one finding; AMBIGUOUS group: {ex_l} log fills, {ex_r} rows)
   equals the hand-computed answers: {yes(('recon', 'implied'))}
 COUNTERFACTUAL  {cf['orders']} past trades replayed through the gate's rules, in time order
   {cf['blocked']} would have been blocked: {', '.join(f'{k} {v}' for k, v in cf['blocked_by_rule'].items())}

@@ -48,6 +48,11 @@ What this project does not do, does not guarantee, or has not shown. Measured fi
   Rows replay in `(ts, CSV row number)` order, so rows with an identical timestamp are decided by file order, and the live gate would
   have decided by arrival order. The replay uses the CSV timestamp as the time the gate would have stamped. The result describes what
   the rules would have decided on that sequence; it does not say the trader would have behaved the same after being blocked.
+- **Counterfactual P&L is realized-only.** Open positions are not marked to market, so the original and rules-applied figures can leave
+  different open positions (the fixture ends with AAPL +10 vs AAPL -50 short) that the P&L impact ignores.
+- **The fixture dollar impact is illustrative.** The +$54.00 comes from a hand-built 17-trade scenario designed to trigger every rule; it
+  says nothing about how much the rules would save a real trader.
+- **The CSV layout is our assumption** (restated here because the counterfactual reads the same format): it is not a real broker's export format.
 - **Not a subtraction.** A blocked trade is not applied, so later positions, realized P&L, loss streak and the order window differ and
   later decisions can change (the fixture has a trade that closes a long in the original and flips the account short with the rules).
   The report's impact is therefore the difference between two full sequential runs.

@@ -82,7 +82,10 @@ def _recon_md(rc: dict) -> list[str]:
         seqs = ", ".join(map(str, f["log_seqs"])) or "-"
         if f.get("related_log_seqs"):
             seqs += f" (see {', '.join(map(str, f['related_log_seqs']))})"
-        L.append(f"| {f['category']} | {seqs} | {', '.join(map(str, f['csv_rows'])) or '-'} | {f['detail']} |")
+        detail = f['detail']
+        if "group" in f:
+            detail += f" [group: {f['group']['log_fills']} log fill(s), {f['group']['broker_rows']} broker row(s)]"
+        L.append(f"| {f['category']} | {seqs} | {', '.join(map(str, f['csv_rows'])) or '-'} | {detail} |")
     d = rc["implied_difference"]
     pos = ", ".join(f"{s} {q:+d}" for s, q in d["position"].items()) or "none"
     ex = d["excluded_ambiguous"]
