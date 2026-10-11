@@ -43,6 +43,7 @@ function Nav() {
         <div className="flex items-center gap-6 text-[13px] text-ink-2">
           <a className="hidden hover:text-ink md:inline" href="#how">How it works</a>
           <a className="hidden hover:text-ink md:inline" href="#proof">Proof</a>
+          <a className="hidden hover:text-ink md:inline" href="/app/follow" data-testid="nav-follow">Follow a leader</a>
           <a className="btn btn-accept" href="/app" data-testid="nav-dashboard">Open dashboard</a>
         </div>
       </div>

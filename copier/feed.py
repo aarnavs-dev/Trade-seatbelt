@@ -15,6 +15,7 @@ class Incoming:
     signer: str     # who published it, from the transport (the local feed says "local")
     raw: Any        # the signal object as received, not yet validated
     ref: str        # where it came from, e.g. "line 7"
+    tx: str | None = None     # the Solana signature when it was read from the chain
 
 
 def write_feed(path, items) -> None:
@@ -37,7 +38,8 @@ def read_local(path) -> list[Incoming]:
         if isinstance(d, dict) and "event" in d and "signal" not in d:
             continue          # publisher notes such as chain_disabled
         signer = d.get("signer") if isinstance(d, dict) and d.get("via") == "chain" and isinstance(d.get("signer"), str) else LOCAL_SIGNER
-        out.append(Incoming(signer, d.get("signal") if isinstance(d, dict) else d, f"line {n}"))
+        tx = d.get("tx") if isinstance(d, dict) and signer != LOCAL_SIGNER and isinstance(d.get("tx"), str) else None
+        out.append(Incoming(signer, d.get("signal") if isinstance(d, dict) else d, f"line {n}", tx))
     return out
 
 

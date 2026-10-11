@@ -205,3 +205,6 @@ stored in the run manifest. Explanations are deterministic text built from the l
 `make follow-chain` and `make devnet-check` use the same Solana **devnet** public RPC and Memo program as the leaders (throwaway
 keypair in `.keys/`, gitignored, secret never printed; writes refuse non-devnet URLs). `devnet-check` publishes 10 seeded,
 meaningless signals; they stay public on devnet. No new dependency.
+
+The `/app/follow` page and `api/follow.py` add no service, key or dependency: the API starts the local copier as a
+subprocess and reads the run's files. Explanations are deterministic text, not AI. Execution is paper only.

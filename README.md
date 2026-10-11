@@ -23,6 +23,7 @@ make demo      # client -> gate -> log -> auditor -> report, then tamper checks
 make follow    # one paper follower over a leader's feed: pre-filters, gate, copier ledger, plain-English explanations (real replay data if fetchable, else the labelled SYNTHETIC FIXTURE)
 make follow-chain # same, with the leader's signals read from Solana devnet (falls back to cache, then local feed, and says so)
 make devnet-check # publish 10 seeded signals to devnet, read them back, compare with feed.jsonl (funded key from make leaders-setup)
+make api && make web  # then open http://127.0.0.1:5173/app/follow: pick a leader, edit your 4 rules, press Start, click any row for the plain-English why (paper only)
 make demo-recon # reconciliation + counterfactual on generated fixtures, with a 10-line summary
 make api       # read-only API for the dashboard on 127.0.0.1:8000 (never on the order path)
 make web       # dashboard dev server on http://127.0.0.1:5173 (run `make api` in another terminal; needs Node 20+)
@@ -120,3 +121,14 @@ Browser check (Playwright; screenshots to `web/e2e/shots/`, plus overflow and co
 ## License
 
 MIT, Copyright (c) 2026 aarnav.dev. See [LICENSE](LICENSE). Third-party packages and their licenses are listed in [docs/DISCLOSURE.md](docs/DISCLOSURE.md).
+
+### Follow page (`/app/follow`)
+
+Run `make api` in one terminal and `make web` in another, then open `/app/follow`. Press **Start**: the API launches
+`python -m copier follow` (its own gate under `runs/<id>/`), and the page shows each signal as it is processed. Rows are
+COPIED, STOPPED BY COPIER, REJECTED BY YOUR RULES or CLIPPED; click one for the explanation. Your four limits are checked by the
+API (an invalid value shows its message) and apply to that run only; the repo's `rules.yaml` is never changed. The badge shows
+where the data came from ("REPLAY of real historical data" or "SYNTHETIC FIXTURE") and the feed ("local feed" or "chain (devnet)").
+`GET /follow/{run}/stream|summary|explain/{n}` and `POST /follow/run|{run}/stop` are the API; a client never sends a path.
+Replay is paced (about 120 ms per signal) so you can watch it; that pacing is a setting, not a measurement.
+`node web/e2e/follow.mjs` (with both servers up) takes the 1440 and 390 px screenshots and audits overflow and contrast.

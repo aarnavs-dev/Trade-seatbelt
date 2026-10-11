@@ -20,6 +20,7 @@ from api import bench as bench_mod
 from api import invariants as inv_mod
 from api import tail
 from api.demo import DemoRunner
+from api.follow import Follows, build_router as build_follow_router
 from api.runs import RunManager
 from api.runs_routes import build_router
 from api.sources import Sources
@@ -50,6 +51,7 @@ class Settings:
     invariants_md: Path = ROOT / "docs" / "INVARIANTS.md"
     junit: Path = ROOT / "out" / "pytest-junit.xml"
     sse_poll: float = 0.1
+    follow_pace_ms: int = 120     # delay between signals of a follow run so the page shows them arriving
     extra: dict = field(default_factory=dict)
 
 
@@ -77,6 +79,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     s = settings or Settings()
     sources = Sources(s.root, s.recon_log, s.default_demo_log)
     runs = RunManager(s.runs_dir, s.root, s.rules, **s.extra.get("run_manager", {}))
+    follows = Follows(s.runs_dir, s.root, s.rules, s.follow_pace_ms)
     demo = DemoRunner(s.root, s.rules, s.orders, on_log=lambda p: setattr(sources, "demo_log", p))
 
     @asynccontextmanager
@@ -87,6 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await asyncio.gather(demo.task, return_exceptions=True)
         demo.cleanup()
         await run_in_threadpool(runs.shutdown)
+        await run_in_threadpool(follows.shutdown)
 
     app = FastAPI(title="Trade Seatbelt API", docs_url=None, redoc_url=None, lifespan=lifespan)
     # DNS-rebinding guard: the API only answers for loopback host names.
@@ -94,6 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.state.runs = runs
     app.include_router(build_router(runs, s.sse_poll))
+    app.include_router(build_follow_router(follows, s.sse_poll))
 
     @app.get("/health")
     def health():

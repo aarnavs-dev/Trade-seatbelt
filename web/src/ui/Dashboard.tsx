@@ -80,6 +80,7 @@ export default function Dashboard() {
       <Tip label="Verify the chain" keys={['V']}><button className="btn" disabled={!!busy || s.total === 0} onClick={() => store.verify()} data-testid="btn-verify">Verify</button></Tip>
       <Tip label="Edit a copy of the log" keys={['T']}><button className="btn btn-reject" disabled={!!busy || s.total === 0 || !!s.tamper} onClick={() => store.tamper()} data-testid="btn-tamper">Tamper</button></Tip>
       <Tip label="Restore the chain" keys={['R']}><button className="btn" disabled={!s.tamper} onClick={() => store.reset()} data-testid="btn-reset">Reset</button></Tip>
+      <a className="btn" href="/app/follow" data-testid="nav-follow">Follow</a>
       <Tip label="Command palette" keys={['⌘', 'K']}><button className="btn" onClick={() => setPalette(true)} aria-label="Open command palette" data-testid="btn-palette">⌘K</button></Tip>
     </>
   )

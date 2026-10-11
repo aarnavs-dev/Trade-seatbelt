@@ -46,7 +46,7 @@ def create_follow_run(runs_dir, *, base_rules, data: ReplayData, cfg: FollowerCo
         "run_id": d.name, "kind": KIND, "simulated": True, "paper_only": True,
         "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "data": data.describe(), "data_label": data.label, "provider": data.provider,
-        "feed": feed or {"source": "local feed"},
+        "feed": feed or {"source": "local feed", "badge": "local feed"},
         "leader": leader, "leader_qty": leader_qty, "follower": cfg.to_dict(), "limit_overrides": overrides,
         "symbols": sorted(data.anchors), "position_limit": rules.max_position_per_symbol, "fsync": "batched",
         "rules_sha256": sha256_file(d / "rules.yaml"), "base_rules_sha256": sha256_file(base_rules),
@@ -72,17 +72,20 @@ def start_gate(run_dir: Path, timeout=20.0):
                             cwd=ROOT, stdout=out, stderr=subprocess.STDOUT)
     out.close()
     end = time.monotonic() + timeout
-    while True:
-        if proc.poll() is not None:
-            raise RuntimeError(f"gate exited early with code {proc.returncode} (see {run_dir / 'gate.out'})")
-        try:
-            socket.create_connection(("127.0.0.1", port), timeout=1).close()
-            return proc, port
-        except OSError:
-            if time.monotonic() > end:
-                proc.kill()
-                raise RuntimeError("the gate did not start in time") from None
-            time.sleep(0.05)
+    try:
+        while True:
+            if proc.poll() is not None:
+                raise RuntimeError(f"gate exited early with code {proc.returncode} (see {run_dir / 'gate.out'})")
+            try:
+                socket.create_connection(("127.0.0.1", port), timeout=1).close()
+                return proc, port
+            except OSError:
+                if time.monotonic() > end:
+                    raise RuntimeError("the gate did not start in time") from None
+                time.sleep(0.05)
+    except BaseException:       # includes SystemExit from SIGTERM: never leave a gate behind
+        stop_gate(proc, wait=3.0)
+        raise
 
 
 def stop_gate(proc, wait=10.0):

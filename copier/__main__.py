@@ -41,21 +41,24 @@ def read_chain(a, out=print):
         address = a.leader_address or Keypair.load(cfg["keypair"]).address      # public key only; the secret is never printed
     except ValueError as e:
         out(f"  chain feed unavailable: {e}; run `make leaders-setup` or pass --leader-address")
-        return None, {"source": "local feed", "requested": "chain", "why": "no leader public key"}, None
+        return None, {"source": "local feed", "badge": "local feed", "requested": "chain", "why": "no leader public key"}, None
     cache = Path("marketdata/cache") / f"chain-{address[:8]}.json"
     res = ChainFeed(RpcClient(cfg["rpc"]), [address], cache).read()
-    info = {"requested": "chain", "leader": address, "rpc_host": cfg["rpc"].split("/")[2], "notes": res.notes,
+    info = {"badge": "local feed", "requested": "chain", "leader": address, "rpc_host": cfg["rpc"].split("/")[2], "notes": res.notes,
             "rejected_by_reader": len(res.rejected)}
     if res.source == "chain" and res.items:
-        return res.items, {**info, "source": "chain"}, (address,)
+        return res.items, {**info, "source": "chain", "badge": "chain (devnet)"}, (address,)
     if res.source == "cache" and res.items:
-        return res.items, {**info, "source": "chain cache (stale)"}, (address,)
+        return res.items, {**info, "source": "chain cache (stale)", "badge": "chain (devnet, cached)"}, (address,)
     why = "; ".join(res.notes) if res.source != "chain" else "the leader has published no signals on devnet yet"
     return None, {**info, "source": "local feed", "why": why[:200]}, None      # local signer is "local": keep that allowlist
 
 
 def cmd_follow(a, out=print) -> int:
-    chain_items, feed_info, allow = None, {"source": "local feed"}, tuple(a.allow)
+    chain_items, feed_info, allow = None, {"source": "local feed", "badge": "local feed"}, tuple(a.allow)
+    if a.announce:      # the API runs this as a subprocess: stop cleanly (stop the gate) when it is terminated
+        import signal as _signal
+        _signal.signal(_signal.SIGTERM, lambda *_: sys.exit(143))
     if a.feed == "chain":
         chain_items, feed_info, chain_allow = read_chain(a, out)
         allow = chain_allow or allow
@@ -71,6 +74,8 @@ def cmd_follow(a, out=print) -> int:
     data = datamod.load(a.symbols, offline=a.offline, day=day)
     run_dir = create_follow_run(a.runs_dir, base_rules=a.rules, data=data, cfg=cfg, overrides=overrides,
                                 leader=a.leader, leader_qty=a.qty, feed=feed_info)
+    if a.announce:
+        print(f"RUN {run_dir.name}", flush=True)
     if chain_items:
         write_feed(run_dir / "feed.jsonl", chain_items)
     else:   # local feed: the leader strategy replayed over the same bars
@@ -81,7 +86,10 @@ def cmd_follow(a, out=print) -> int:
     try:
         write_status(run_dir, "running")
         proc, port = start_gate(run_dir)
-        summary = run_follower(run_dir, port)
+        summary = run_follower(run_dir, port, pace_ms=a.pace_ms)
+    except SystemExit:
+        write_status(run_dir, "stopped")
+        raise
     except Exception:
         write_status(run_dir, "failed")
         raise
@@ -137,6 +145,8 @@ def main(argv=None) -> int:
     f.add_argument("--feed", choices=("local", "chain"), default="local",
                    help="chain: read the leader's signals from devnet (falls back to the cache, then to a local feed)")
     f.add_argument("--leader-address", help="the leader's public key for --feed chain (default: from LEADER_KEYPAIR_PATH)")
+    f.add_argument("--announce", action="store_true", help="print 'RUN <id>' once the run exists (used by the API)")
+    f.add_argument("--pace-ms", type=int, default=0, help="sleep between signals so a UI can show the feed live")
     f.add_argument("--allow-short", action="store_true", help="let a copied SELL open a short (default: close-only)")
     f.add_argument("--allow", nargs="+", default=["local"], help="trusted leaders (signers)")
     f.add_argument("--max-age-ms", type=int, default=900_000)
