@@ -74,14 +74,23 @@ def last_sessions(today: date):
     return found[1], found[0]
 
 
-def load(symbols=SYMBOLS, *, offline=False, today=None, cache_dir="marketdata/cache", dotenv=".env", provider=None) -> ReplayData:
+def previous_trading_day(day: date) -> date:
+    d = day - timedelta(days=1)
+    while not is_trading_day(d):
+        d -= timedelta(days=1)
+    return d
+
+
+def load(symbols=SYMBOLS, *, offline=False, today=None, day=None, cache_dir="marketdata/cache", dotenv=".env", provider=None) -> ReplayData:
     """Real data if possible; any failure (no network, no keys, rate limit, no bars for a symbol) -> the fixture, with the
-    reason recorded. Never raises for a data problem."""
+    reason recorded. Never raises for a data problem. `day` pins the replayed session (a chain feed's signals say which)."""
     if offline:
         return load_fixture(symbols, reason="offline requested")
     try:
-        today = today or datetime.now(NY).date()
-        prev, day = last_sessions(today)
+        if day is not None:
+            prev = previous_trading_day(day)
+        else:
+            prev, day = last_sessions(today or datetime.now(NY).date())
         backend = ReplayBackend(provider or choose_provider(dotenv_path=dotenv), cache_dir=cache_dir)
         bs: BarSet = backend.get_bars(list(symbols), prev, day, INTERVAL)
         bars, anchors = split(bs.bars, prev, day, list(symbols))

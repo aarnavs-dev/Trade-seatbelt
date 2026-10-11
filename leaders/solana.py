@@ -15,6 +15,7 @@ ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 MEMO_PROGRAM = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
 DEVNET_GENESIS = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"
 DEFAULT_RPC = "https://api.devnet.solana.com"
+RATE_LIMIT_TRIES = 5
 WRITE_METHODS = frozenset({"sendTransaction", "requestAirdrop"})
 
 
@@ -155,7 +156,12 @@ class RpcClient:
 
     def _http_post(self, payload):
         import httpx
-        r = httpx.post(self.url, json=payload, timeout=self.timeout)
+        import time
+        for attempt in range(RATE_LIMIT_TRIES):     # public RPCs answer 429 when called too often: wait and retry
+            r = httpx.post(self.url, json=payload, timeout=self.timeout)
+            if r.status_code != 429 or attempt == RATE_LIMIT_TRIES - 1:
+                break
+            time.sleep(min(2 ** attempt, 8))
         if r.status_code != 200:
             raise RpcError(f"rpc answered HTTP {r.status_code}")
         return r.json()

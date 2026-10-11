@@ -370,7 +370,7 @@ def test_invariants_without_a_result_file_are_unknown_not_passing(tmp_path):
 
 def test_real_invariants_file_parses_every_row(client):
     j = client.get("/invariants").json()
-    assert [r["id"] for r in j["invariants"]][:3] == ["1", "2", "3"] and len(j["invariants"]) == 18
+    assert [r["id"] for r in j["invariants"]][:3] == ["1", "2", "3"] and len(j["invariants"]) == 20
     assert all(r["refs"] for r in j["invariants"] if r["id"] != "9")  # only the benchmark-harness row has no pytest ref
 
 

@@ -210,6 +210,45 @@ def test_market_closed_uses_the_calendar():
     assert [c for _, c in skips] == ["MARKET_CLOSED"] and not fake.orders
 
 
+# ------------------------------------------------------------------ close-only (no short)
+def test_close_only_clips_a_sell_to_the_long_position_and_skips_when_flat():
+    cfg = FollowerConfig(scale_num=1, scale_den=1)
+    sk = Skips()
+    sk.append = lambda sid, code, text: sk.lines.append((sid, code, text))
+    fake = Fake()
+    cp = Copier(cfg, ("AAPL",), fake, sk)
+    for i in (inc(1, qty=4), inc(2, side="SELL", qty=10), inc(3, side="SELL", qty=3)):
+        cp.process(i)
+    assert [(o["side"], o["qty"]) for o in fake.orders] == [("BUY", 4), ("SELL", 4)]          # 10 clipped to the 4 held
+    assert sk.lines[0][:2] == ("local:2", "SIZE_CLIPPED") and "clipped to the 4 AAPL" in sk.lines[0][2]
+    assert sk.lines[1][:2] == ("local:3", "SELL_WITHOUT_POSITION") and "nothing to sell" in sk.lines[1][2]
+    assert cp.summary()["clipped"] == 1 and cp.summary()["skipped"] == {"SELL_WITHOUT_POSITION": 1}
+    # with the flag on, the SELL goes through unclipped
+    fake = Fake()
+    Copier(FollowerConfig(scale_num=1, scale_den=1, allow_short=True), ("AAPL",), fake, Skips()).process(inc(1, side="SELL", qty=7))
+    assert fake.orders[0]["qty"] == 7
+
+
+def test_a_rejected_buy_followed_by_the_leaders_sell_never_creates_a_short(tmp_path):
+    d = fixture_run(tmp_path, overrides={"max_position_per_symbol": 5})          # the leader's BUY 10 is rejected
+    rows = [sigd(1, qty=10), sigd(2, side="SELL", qty=10, price=20900), sigd(3, qty=4), sigd(4, side="SELL", qty=10, price=20900)]
+    (d / "feed.jsonl").write_bytes(b"".join(orjson.dumps({"signal": r}) + b"\n" for r in rows))
+    s = follow(d)
+    ev = list(scan(d / "gate.log"))
+    assert [(e.client_order_id, e.decision) for e in ev][0] == (order_id_for("local:1"), "REJECT")
+    assert [(e.side, e.qty, e.decision) for e in ev] == [("BUY", 10, "REJECT"), ("BUY", 4, "ACCEPT"), ("SELL", 4, "ACCEPT")]
+    led = Ledger()
+    for e in ev:
+        if e.decision == "ACCEPT":
+            led.fill(e.symbol, e.side, e.qty, e.price, 0)
+            assert led.position("AAPL") >= 0
+    lines = ledger.read(d / "copier.log")
+    assert [l["reason_code"] for l in lines] == ["SELL_WITHOUT_POSITION", "SIZE_CLIPPED"]
+    assert s["clipped"] == 1
+    kinds = [e["kind"] for e in explain_copier_log(d / "copier.log")]
+    assert kinds == ["copier_skip", "copier_clip"]
+
+
 # ------------------------------------------------------------------ run setup
 def test_overrides_are_validated():
     assert validate_overrides({"max_position_per_symbol": 5, "loss_streak_cooldown": {"losses": 2}})
@@ -309,7 +348,8 @@ def test_a_killed_and_restarted_copier_matches_a_clean_run(tmp_path):
     assert (killed / "gate.log").read_bytes().replace(killed.name.encode(), b"") == (clean / "gate.log").read_bytes().replace(clean.name.encode(), b"")
     assert (killed / "copier.log").read_bytes() == (clean / "copier.log").read_bytes()
     ids = [e.client_order_id for e in scan(killed / "gate.log")]
-    assert len(ids) == len(set(ids)) == 60 - len(ledger.read(killed / "copier.log"))
+    skipped = [l for l in ledger.read(killed / "copier.log") if l["reason_code"] != "SIZE_CLIPPED"]
+    assert len(ids) == len(set(ids)) == 60 - len(skipped)
 
 
 def test_same_feed_rules_and_data_give_byte_identical_logs(tmp_path):
@@ -351,6 +391,7 @@ def test_property_every_accepted_order_satisfies_the_followers_limits(items, lim
             before = led.position(e.symbol)
             signed = e.qty if e.side == "BUY" else -e.qty
             assert abs(before + signed) <= limit or abs(before + signed) <= abs(before)       # position limit (closing always ok)
+            assert before + signed >= 0                                                       # close-only: never short
             if abs(before + signed) > abs(before):
                 assert led.realized_gross - led.fees > -rules.max_daily_loss                   # daily loss only blocks new risk
             led.fill(e.symbol, e.side, e.qty, e.price, rules.fees.of(e.qty))
@@ -492,3 +533,63 @@ def test_explain_refuses_a_tampered_log(tmp_path):
     (d / "gate.log").write_bytes(raw.replace(b'"qty":10', b'"qty":11', 1))
     with pytest.raises(ChainError):
         explain_log(d / "gate.log", load_rules(d / "rules.yaml"))
+
+
+# ------------------------------------------------------------------ chain feed wiring
+LEADER_KEY = "CfUDMw61yyZKofYuptmTNLcaxFZTaytKV3HAhkh7Ls7w"      # a public address (the project's throwaway devnet leader)
+
+
+def fake_chain(monkeypatch, result):
+    import copier.__main__ as cm
+
+    class Stub:
+        def __init__(self, rpc, allowlist, cache, **kw):
+            assert tuple(allowlist) == (LEADER_KEY,)
+
+        def read(self):
+            return result
+    monkeypatch.setattr(cm, "ChainFeed", Stub)
+    return cm
+
+
+def run_cli(cm, tmp_path, *extra):
+    return cm.main(["follow", "--feed", "chain", "--leader-address", LEADER_KEY, "--offline", "--runs-dir", str(tmp_path / "r"),
+                    "--scale", "1/1", "--drawdown-stop", "1000000", *extra])
+
+
+def test_chain_feed_signals_are_copied_with_the_leaders_key_as_the_only_trusted_signer(tmp_path, monkeypatch, capsys):
+    from leaders.feed import FeedItem, FeedResult
+    data = datamod.load_fixture()
+    items = [FeedItem(s, LEADER_KEY, 100 + s.leader_seq, 0, f"sig{s.leader_seq}")
+             for s in generate(data.bars, "momentum", "synthetic", qty=10)]
+    items.append(FeedItem(items[0].signal.__class__(**{**items[0].signal.to_dict(), "leader_seq": 99}), "ImpostorKey1111", 500, 0, "sigX"))
+    cm = fake_chain(monkeypatch, FeedResult(items, "chain", [], ["read from 1 allowlisted signer(s)"]))
+    assert run_cli(cm, tmp_path) == 0
+    out = capsys.readouterr().out
+    (d,) = (tmp_path / "r").iterdir()
+    m = orjson.loads((d / "manifest.json").read_bytes())
+    assert "FEED: source: chain" in out and m["feed"]["source"] == "chain" and m["feed"]["leader"] == LEADER_KEY
+    assert m["follower"]["allowlist"] == [LEADER_KEY]
+    assert [i.signer for i in read_local(d / "feed.jsonl")][-1] == "ImpostorKey1111"
+    skips = {l["signal_id"]: l["reason_code"] for l in ledger.read(d / "copier.log")}
+    assert skips[f"ImpostorKey1111:99"] == "UNTRUSTED_LEADER"
+    sent = {e.client_order_id for e in scan(d / "gate.log")}
+    assert order_id_for(f"ImpostorKey1111:99") not in sent and order_id_for(f"{LEADER_KEY}:{items[0].signal.leader_seq}") in sent
+
+
+def test_chain_failure_falls_back_to_the_cache_then_the_local_feed_and_says_so(tmp_path, monkeypatch, capsys):
+    from leaders.feed import FeedItem, FeedResult
+    data = datamod.load_fixture()
+    sigs = list(generate(data.bars, "momentum", "synthetic", qty=10))
+    cached = FeedResult([FeedItem(s, LEADER_KEY, 1, 0, f"s{s.leader_seq}") for s in sigs], "cache", [], ["network failure; showing CACHED data"])
+    cm = fake_chain(monkeypatch, cached)
+    assert run_cli(cm, tmp_path / "a") == 0
+    assert "source: chain cache (stale)" in capsys.readouterr().out
+    cm = fake_chain(monkeypatch, FeedResult([], "unavailable", [], ["network failure (rpc answered HTTP 429); no usable cache"]))
+    assert run_cli(cm, tmp_path / "b") == 0
+    out = capsys.readouterr().out
+    assert "source: local feed" in out and "asked for chain" in out and "429" in out
+    (d,) = (tmp_path / "b" / "r").iterdir()
+    m = orjson.loads((d / "manifest.json").read_bytes())
+    assert m["feed"]["source"] == "local feed" and m["feed"]["requested"] == "chain" and m["follower"]["allowlist"] == ["local"]
+    assert sum(1 for _ in scan(d / "gate.log")) > 0

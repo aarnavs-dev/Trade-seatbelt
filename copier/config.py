@@ -64,6 +64,7 @@ class FollowerConfig:
     scale_num: int = 1                   # follower qty = leader qty * scale_num // scale_den (floor, integers only)
     scale_den: int = 2
     leader_drawdown_stop: int = 2_000    # cents; stop opening/adding when the leader's realized drawdown reaches this
+    allow_short: bool = False            # False: a copied SELL is clipped to the follower's long position (never short)
 
     def __post_init__(self):
         if not self.allowlist or not all(isinstance(s, str) and s for s in self.allowlist):
@@ -74,6 +75,8 @@ class FollowerConfig:
         _pos_int("scale_num", self.scale_num)
         _pos_int("scale_den", self.scale_den)
         _pos_int("leader_drawdown_stop", self.leader_drawdown_stop)
+        if type(self.allow_short) is not bool:
+            raise ConfigError(f"allow_short must be true or false, got {self.allow_short!r}")
 
     def to_dict(self) -> dict:
         d = asdict(self)

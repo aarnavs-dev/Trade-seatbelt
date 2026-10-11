@@ -36,7 +36,7 @@ def build_rules(base_rules, anchors: dict, overrides: dict) -> tuple[str, Rules]
 
 
 def create_follow_run(runs_dir, *, base_rules, data: ReplayData, cfg: FollowerConfig, overrides=None, leader="orb",
-                      leader_qty=10, root=ROOT, now=None) -> Path:
+                      leader_qty=10, root=ROOT, now=None, feed=None) -> Path:
     overrides = overrides or {}
     text, rules = build_rules(base_rules, data.anchors, overrides)
     d = run_dir_for(runs_dir, new_run_id(now))
@@ -46,6 +46,7 @@ def create_follow_run(runs_dir, *, base_rules, data: ReplayData, cfg: FollowerCo
         "run_id": d.name, "kind": KIND, "simulated": True, "paper_only": True,
         "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "data": data.describe(), "data_label": data.label, "provider": data.provider,
+        "feed": feed or {"source": "local feed"},
         "leader": leader, "leader_qty": leader_qty, "follower": cfg.to_dict(), "limit_overrides": overrides,
         "symbols": sorted(data.anchors), "position_limit": rules.max_position_per_symbol, "fsync": "batched",
         "rules_sha256": sha256_file(d / "rules.yaml"), "base_rules_sha256": sha256_file(base_rules),

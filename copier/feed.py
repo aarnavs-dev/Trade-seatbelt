@@ -17,6 +17,15 @@ class Incoming:
     ref: str        # where it came from, e.g. "line 7"
 
 
+def write_feed(path, items) -> None:
+    """Save chain-read items as the run's feed.jsonl (a restart re-reads this file, not the network). The saved copy
+    keeps each item's signer and signature; only lines with via == "chain" may name a signer."""
+    with open(path, "wb") as f:
+        for i in items:
+            f.write(orjson.dumps({"signal": i.signal.to_dict(), "via": "chain", "tx": i.signature, "signer": i.signer},
+                                 option=orjson.OPT_SORT_KEYS) + b"\n")
+
+
 def read_local(path) -> list[Incoming]:
     out = []
     for n, line in enumerate(Path(path).read_bytes().splitlines(), 1):
@@ -27,7 +36,8 @@ def read_local(path) -> list[Incoming]:
             continue
         if isinstance(d, dict) and "event" in d and "signal" not in d:
             continue          # publisher notes such as chain_disabled
-        out.append(Incoming(LOCAL_SIGNER, d.get("signal") if isinstance(d, dict) else d, f"line {n}"))
+        signer = d.get("signer") if isinstance(d, dict) and d.get("via") == "chain" and isinstance(d.get("signer"), str) else LOCAL_SIGNER
+        out.append(Incoming(signer, d.get("signal") if isinstance(d, dict) else d, f"line {n}"))
     return out
 
 

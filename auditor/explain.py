@@ -37,7 +37,9 @@ COPIER_PROTECTS = {
     "STALE_SIGNAL": "acting on old information",
     "FEED_GAP": "copying a signal that may depend on signals that never arrived",
     "LEADER_DRAWDOWN_STOP": "following a leader who is deep in a drawdown",
+    "SELL_WITHOUT_POSITION": "accidentally going short by copying a sale of something you never bought",
     "SIZE_ROUNDS_TO_ZERO": "a copied order that is too small to exist after scaling",
+    "SIZE_CLIPPED": "selling more than you hold, which would flip you short",
 }
 MAX_LISTED = 5
 
@@ -182,9 +184,11 @@ def explain_copier_log(path) -> list[dict]:
         code = ln["reason_code"]
         d = {"kind": "copier_skip", "seq": ln["seq"], "signal_id": ln["signal_id"], "reason_code": code,
              "protects_against": COPIER_PROTECTS.get(code, "an unsafe copy"), "detail": ln["reason_text"]}
-        d["text"] = (f"SKIPPED copier.log line {d['seq']}  signal {d['signal_id']}  [{code}]\n"
+        clip = code == "SIZE_CLIPPED"
+        d["kind"] = "copier_clip" if clip else "copier_skip"
+        d["text"] = (f"{'CLIPPED' if clip else 'SKIPPED'} copier.log line {d['seq']}  signal {d['signal_id']}  [{code}]\n"
                      f"  protects against {d['protects_against']}.\n  why         {d['detail']}\n"
-                     f"  This signal never reached the gate.")
+                     + ("  A smaller order was sent to the gate." if clip else "  This signal never reached the gate."))
         out.append(d)
     return out
 

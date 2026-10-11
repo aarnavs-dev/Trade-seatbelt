@@ -6,6 +6,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import orjson
+
 from leaders.publisher import Publisher
 from leaders.runner import generate
 from leaders.solana import DEFAULT_RPC, Keypair, MainnetWriteRefused, RpcClient, RpcError, assert_devnet
@@ -63,6 +65,93 @@ def cmd_setup(cfg, rpc=None, out=print) -> int:
     return 0
 
 
+EXPLORER = "https://explorer.solana.com/tx/{}?cluster=devnet"
+CHECK_SEED, CHECK_N, MIN_LAMPORTS = 20261011, 10, 100_000
+
+
+def check_signals(first_seq: int):
+    """10 seeded signals (same content every time; only leader_seq starts after what is already on chain)."""
+    import random
+    from leaders.signal import Signal
+    rng, base = random.Random(CHECK_SEED), 1_790_000_000_000
+    out = []
+    for i in range(CHECK_N):
+        sym = rng.choice(SYMBOLS)
+        out.append(Signal(first_seq + i, sym, "BUY" if i % 2 == 0 else "SELL", rng.randint(1, 50), rng.randint(10_000, 60_000),
+                          base + i * 300_000, "devnet-check", base + i * 300_000))
+    return out
+
+
+def cmd_devnet_check(cfg, out=print, sleep=None, rpc=None) -> int:
+    """Publish 10 seeded signals, read them back with the chain reader and compare with feed.jsonl. Devnet only."""
+    import time
+    from leaders.feed import ChainFeed
+    sleep = sleep or time.sleep
+    try:
+        kp = Keypair.load(cfg["keypair"])
+    except ValueError as e:
+        out(f"devnet-check: {e}; run `make leaders-setup` first")
+        return 1
+    rpc = rpc or RpcClient(cfg["rpc"])
+    try:
+        assert_devnet(rpc)
+        lamports = rpc.call("getBalance", [kp.address])["value"]
+    except MainnetWriteRefused as e:
+        out(f"devnet-check: {e}")
+        return 2
+    except RpcError as e:
+        out(f"devnet-check: cannot reach the devnet RPC ({e}). Nothing was published.")
+        return 1
+    out(f"leader {kp.address}  balance {lamports} lamports (devnet)")
+    if lamports < MIN_LAMPORTS:
+        out("devnet-check: the keypair is not funded. Run `make leaders-setup` again later or use https://faucet.solana.com "
+            f"with the address above. Nothing was published.")
+        return 1
+    cache = Path("out/devnet-check/chain-cache.json")
+    reader = ChainFeed(rpc, [kp.address], cache)
+    try:
+        before = reader.read()
+    except RpcError as e:
+        out(f"devnet-check: cannot read the chain ({e})")
+        return 1
+    if before.source != "chain":
+        out(f"devnet-check: could not read the chain ({'; '.join(before.notes)})")
+        return 1
+    first = max([i.signal.leader_seq for i in before.items], default=0) + 1
+    run_dir = Path("out/devnet-check") / f"{first:08d}"
+    pub = Publisher(run_dir, rpc, kp)
+    sent = []
+    for sig in check_signals(first):
+        line = pub.publish(sig)
+        if not pub.chain_ok:
+            out("devnet-check: the real node did not take the transaction. Exact error from the publisher:")
+            out(f"  {pub.disabled_reason}")
+            return 1
+        sent.append(line["tx"])
+    out(f"published {len(sent)} signals (leader_seq {first}..{first + len(sent) - 1}); reading them back")
+    deadline, got = time.monotonic() + 120, []
+    while time.monotonic() < deadline:
+        try:
+            res = reader.read()
+        except RpcError:
+            res = None
+        if res is not None and res.source == "chain":
+            got = [i for i in res.items if i.signature in set(sent)]
+            if len(got) == len(sent):
+                break
+        sleep(10)
+    expected = [orjson.loads(l)["signal"] for l in (run_dir / "feed.jsonl").read_bytes().splitlines()]
+    for n, tx in enumerate(sent, 1):
+        out(f"  {n:2d}. {EXPLORER.format(tx)}")
+    if [i.signal.to_dict() for i in got] != expected or [i.signature for i in got] != sent:
+        out(f"devnet-check: MISMATCH. published {len(sent)}, read back {len(got)}; "
+            f"in order and content they differ from {run_dir / 'feed.jsonl'}")
+        return 1
+    out(f"devnet-check: OK. {len(got)} signals read back from devnet equal feed.jsonl in order and content "
+        f"(slots {got[0].slot}..{got[-1].slot}).")
+    return 0
+
+
 def cmd_run(args, cfg, out=print) -> int:
     provider = choose_provider(dotenv_path=".env")
     md = ReplayBackend(provider)
@@ -99,6 +188,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="leaders")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("setup")
+    sub.add_parser("devnet-check")
     r = sub.add_parser("run")
     r.add_argument("--leader", choices=("orb", "momentum", "meanrev"), default="orb")
     r.add_argument("--symbols", nargs="+", default=list(SYMBOLS))
@@ -110,6 +200,8 @@ def main(argv=None) -> int:
     r.add_argument("--runs-dir", default="runs")
     args = ap.parse_args(argv)
     cfg = load_config()
+    if args.cmd == "devnet-check":
+        return cmd_devnet_check(cfg)
     return cmd_setup(cfg) if args.cmd == "setup" else cmd_run(args, cfg)
 
 

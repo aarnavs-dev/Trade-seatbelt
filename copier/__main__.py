@@ -6,14 +6,21 @@ import sys
 import orjson
 
 from auditor.explain import explain_copier_log, explain_log, render
+from pathlib import Path
+
 from copier import data as datamod
 from copier.config import ConfigError, FollowerConfig, parse_override_args
+from copier.feed import write_feed
 from copier.follow import run_follower, write_status
 from copier.run import ROOT, create_follow_run, start_gate, stop_gate
 from core.money import fmt
 from core.rules import load_rules
+from leaders.__main__ import load_config
+from leaders.feed import ChainFeed
 from leaders.publisher import Publisher
 from leaders.runner import generate
+from leaders.solana import Keypair, RpcClient
+from marketdata.calendar import ny_date
 from marketdata import SYMBOLS
 
 
@@ -27,21 +34,49 @@ def _by(counter):
     return ", ".join(f"{k} {v}" for k, v in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))) or "none"
 
 
+def read_chain(a, out=print):
+    """-> (items, feed_info, allowlist). items is None when the chain AND its cache are unavailable (use the local feed)."""
+    cfg = load_config()
+    try:
+        address = a.leader_address or Keypair.load(cfg["keypair"]).address      # public key only; the secret is never printed
+    except ValueError as e:
+        out(f"  chain feed unavailable: {e}; run `make leaders-setup` or pass --leader-address")
+        return None, {"source": "local feed", "requested": "chain", "why": "no leader public key"}, None
+    cache = Path("marketdata/cache") / f"chain-{address[:8]}.json"
+    res = ChainFeed(RpcClient(cfg["rpc"]), [address], cache).read()
+    info = {"requested": "chain", "leader": address, "rpc_host": cfg["rpc"].split("/")[2], "notes": res.notes,
+            "rejected_by_reader": len(res.rejected)}
+    if res.source == "chain" and res.items:
+        return res.items, {**info, "source": "chain"}, (address,)
+    if res.source == "cache" and res.items:
+        return res.items, {**info, "source": "chain cache (stale)"}, (address,)
+    why = "; ".join(res.notes) if res.source != "chain" else "the leader has published no signals on devnet yet"
+    return None, {**info, "source": "local feed", "why": why[:200]}, None      # local signer is "local": keep that allowlist
+
+
 def cmd_follow(a, out=print) -> int:
+    chain_items, feed_info, allow = None, {"source": "local feed"}, tuple(a.allow)
+    if a.feed == "chain":
+        chain_items, feed_info, chain_allow = read_chain(a, out)
+        allow = chain_allow or allow
     try:
         overrides = parse_override_args(a.limit)
         num, _, den = a.scale.partition("/")
-        cfg = FollowerConfig(allowlist=tuple(a.allow), max_age_ms=a.max_age_ms, delay_ms=a.delay_ms,
-                             scale_num=int(num), scale_den=int(den or 1), leader_drawdown_stop=a.drawdown_stop)
+        cfg = FollowerConfig(allowlist=allow, max_age_ms=a.max_age_ms, delay_ms=a.delay_ms,
+                             scale_num=int(num), scale_den=int(den or 1), leader_drawdown_stop=a.drawdown_stop, allow_short=a.allow_short)
     except (ConfigError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    data = datamod.load(a.symbols, offline=a.offline)
+    day = ny_date(min(i.signal.data_ts for i in chain_items) - 1) if chain_items else None
+    data = datamod.load(a.symbols, offline=a.offline, day=day)
     run_dir = create_follow_run(a.runs_dir, base_rules=a.rules, data=data, cfg=cfg, overrides=overrides,
-                                leader=a.leader, leader_qty=a.qty)
-    pub = Publisher(run_dir)
-    for sig in generate(data.bars, a.leader, data.provider, qty=a.qty):
-        pub.publish(sig)
+                                leader=a.leader, leader_qty=a.qty, feed=feed_info)
+    if chain_items:
+        write_feed(run_dir / "feed.jsonl", chain_items)
+    else:   # local feed: the leader strategy replayed over the same bars
+        pub = Publisher(run_dir)
+        for sig in generate(data.bars, a.leader, data.provider, qty=a.qty):
+            pub.publish(sig)
     proc = None
     try:
         write_status(run_dir, "running")
@@ -61,6 +96,10 @@ def cmd_follow(a, out=print) -> int:
                                       " (generated bars, not market data)"))
     if data.fallback_reason:
         out(f"  real data not used: {data.fallback_reason}")
+    out(f"  FEED: source: {feed_info['source']}" + (f"  (asked for chain: {feed_info['why']})" if feed_info.get("why") else "")
+        + (f"  leader {feed_info['leader']}" if feed_info.get("leader") else ""))
+    if chain_items and str(day) != data.session:
+        out(f"  WARNING: the chain signals are from {day} but the price anchors are from {data.session}; expect PRICE_BAND rejects")
     out(f"  leader {a.leader} (qty {a.qty}), follower scale {a.scale}, allowlist {','.join(cfg.allowlist)}"
         + (f", limit overrides {overrides}" if overrides else ""))
     out(f"  dir {run_dir}")
@@ -68,6 +107,7 @@ def cmd_follow(a, out=print) -> int:
     rej = sum(summary["rejected"].values())
     _table([("signals seen", summary["seen"]), ("sent to the gate", summary["sent"]),
             ("accepted by the gate", summary["accepted"]),
+            ("clipped to long position", summary["clipped"]),
             ("stopped by the copier", f"{stopped}  ({_by(summary['skipped'])})"),
             ("rejected by the rules", f"{rej}  ({_by(summary['rejected'])})")], out)
     exps = explain_log(run_dir / "gate.log", rules)
@@ -94,6 +134,10 @@ def main(argv=None) -> int:
     f.add_argument("--symbols", nargs="+", default=list(SYMBOLS))
     f.add_argument("--qty", type=int, default=10, help="the leader's qty per signal")
     f.add_argument("--scale", default="1/2", help="follower qty = leader qty * num/den, rounded down")
+    f.add_argument("--feed", choices=("local", "chain"), default="local",
+                   help="chain: read the leader's signals from devnet (falls back to the cache, then to a local feed)")
+    f.add_argument("--leader-address", help="the leader's public key for --feed chain (default: from LEADER_KEYPAIR_PATH)")
+    f.add_argument("--allow-short", action="store_true", help="let a copied SELL open a short (default: close-only)")
     f.add_argument("--allow", nargs="+", default=["local"], help="trusted leaders (signers)")
     f.add_argument("--max-age-ms", type=int, default=900_000)
     f.add_argument("--delay-ms", type=int, default=0)

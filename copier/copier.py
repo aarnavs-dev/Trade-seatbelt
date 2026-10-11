@@ -1,9 +1,10 @@
 """The follower. Pre-filters run in a FIXED order, before the gate:
 
   INVALID_SIGNAL, UNTRUSTED_LEADER, DUPLICATE_SIGNAL, UNKNOWN_SYMBOL, MARKET_CLOSED, STALE_SIGNAL, FEED_GAP,
-  LEADER_DRAWDOWN_STOP
+  LEADER_DRAWDOWN_STOP, SELL_WITHOUT_POSITION
 
-then the leader's qty is scaled (SIZE_ROUNDS_TO_ZERO) and the order goes to the gate with a client_order_id derived from
+then the leader's qty is scaled (SIZE_ROUNDS_TO_ZERO), a SELL is clipped to the follower's long position unless
+allow_short (the clip is recorded in copier.log as SIZE_CLIPPED, and the order is still sent), and the order goes to the gate with a client_order_id derived from
 the signal id, so a replayed or restarted copier cannot double-submit (the gate returns the original decision).
 
 Everything the filters decide depends only on the feed, the config and the rules, never on the wall clock. The
@@ -20,7 +21,8 @@ from leaders.signal import SignalError, validate
 from marketdata.calendar import CalendarRangeError, ny_date, session_ms
 
 CODES = ("INVALID_SIGNAL", "UNTRUSTED_LEADER", "DUPLICATE_SIGNAL", "UNKNOWN_SYMBOL", "MARKET_CLOSED", "STALE_SIGNAL",
-         "FEED_GAP", "LEADER_DRAWDOWN_STOP", "SIZE_ROUNDS_TO_ZERO")
+         "FEED_GAP", "LEADER_DRAWDOWN_STOP", "SELL_WITHOUT_POSITION", "SIZE_ROUNDS_TO_ZERO")
+CLIPPED = "SIZE_CLIPPED"      # logged, not a skip: a smaller order was sent
 
 
 def order_id_for(signal_id: str) -> str:
@@ -69,6 +71,7 @@ class Copier:
         self.clock = 0
         self.stats = {"seen": 0, "sent": 0, "accepted": 0, "resent": 0}
         self.skipped, self.rejected = Counter(), Counter()
+        self.clipped = 0
 
     def _skip(self, signal_id, code, text):
         self.skipped[code] += 1
@@ -112,6 +115,10 @@ class Copier:
                                                "this one may depend on them.")
         # 8. LEADER_DRAWDOWN_STOP (only for orders that would grow the follower's position, so a position can always be closed)
         cur = self.pos.get(sig.symbol, 0)
+        # 9. SELL_WITHOUT_POSITION (close-only: nothing to sell means nothing to copy)
+        if sig.side == "SELL" and not cfg.allow_short and cur <= 0:
+            return self._skip(sid, "SELL_WITHOUT_POSITION",
+                              f"You don't hold {sig.symbol}, so there is nothing to sell (this follower never goes short).")
         qty = scale_qty(sig.qty, cfg.scale_num, cfg.scale_den)
         if qty > 0:
             delta = qty if sig.side == "BUY" else -qty
@@ -122,6 +129,11 @@ class Copier:
         if qty == 0:
             return self._skip(sid, "SIZE_ROUNDS_TO_ZERO",
                               f"Leader qty {sig.qty} scaled by {cfg.scale_num}/{cfg.scale_den} rounds down to 0 shares.")
+        if sig.side == "SELL" and not cfg.allow_short and qty > cur:
+            self.skiplog.append(sid, CLIPPED, f"Leader SELL {sig.qty} scaled to {qty}, clipped to the {cur} {sig.symbol} "
+                                              f"share(s) you hold; a SELL of {cur} was sent.")
+            self.clipped += 1
+            qty = cur
         reply = self.submit({"client_order_id": order_id_for(sid), "symbol": sig.symbol, "side": sig.side,
                              "qty": qty, "price": sig.ref_price})
         if "error" in reply:
@@ -141,4 +153,4 @@ class Copier:
         return self.summary()
 
     def summary(self) -> dict:
-        return {**self.stats, "skipped": dict(sorted(self.skipped.items())), "rejected": dict(sorted(self.rejected.items()))}
+        return {**self.stats, "clipped": self.clipped, "skipped": dict(sorted(self.skipped.items())), "rejected": dict(sorted(self.rejected.items()))}

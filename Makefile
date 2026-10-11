@@ -1,7 +1,7 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: follow leaders-setup setup sim demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
+.PHONY: follow follow-chain devnet-check leaders-setup setup sim demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
 
 setup:
 	$(PYTHON312) -m venv .venv
@@ -65,3 +65,12 @@ bench-report:
 FOLLOW_ARGS ?= --limit max_daily_loss=300 --scale 1/1 --drawdown-stop 3000
 follow:
 	$(PY) -m copier follow $(FOLLOW_ARGS)
+
+# Same, but the leader's signals are read from Solana devnet (needs `make leaders-setup` and a published feed).
+# Falls back to the cached chain read, then to a local feed, and says which one was used.
+follow-chain:
+	$(PY) -m copier follow --feed chain $(FOLLOW_ARGS)
+
+# Publish 10 seeded signals to devnet, read them back and compare with feed.jsonl. Devnet only; needs a funded keypair.
+devnet-check:
+	$(PY) -m leaders devnet-check

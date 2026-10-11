@@ -494,3 +494,44 @@ def test_new_code_never_imports_or_touches_gate(tmp_path):
         pub.publish(s)
     assert hashlib.sha256(gate_log.read_bytes()).hexdigest() == before
     assert sorted(p.name for p in run.iterdir()) == ["feed.jsonl", "gate.log"]
+
+
+def test_rpc_client_retries_on_http_429_then_gives_up(monkeypatch):
+    import httpx
+    from leaders import solana
+    calls, sleeps = [], []
+
+    def fake_post(url, json, timeout):
+        calls.append(1)
+        return httpx.Response(429 if len(calls) < 3 else 200, json={"jsonrpc": "2.0", "id": 1, "result": 7})
+    monkeypatch.setattr(httpx, "post", fake_post)
+    monkeypatch.setattr("time.sleep", sleeps.append)
+    assert solana.RpcClient("https://api.devnet.solana.com").call("getSlot") == 7 and sleeps == [1, 2]
+    calls.clear()
+    monkeypatch.setattr(httpx, "post", lambda url, json, timeout: (calls.append(1), httpx.Response(429))[1])
+    with pytest.raises(solana.RpcError, match="429"):
+        solana.RpcClient("https://api.devnet.solana.com").call("getSlot")
+    assert len(calls) == solana.RATE_LIMIT_TRIES
+
+
+def test_devnet_check_refuses_non_devnet_and_unfunded_keys_and_prints_no_secret(tmp_path):
+    from leaders.__main__ import cmd_devnet_check, check_signals
+    from leaders.solana import DEVNET_GENESIS, Keypair, RpcClient
+    kp = Keypair.generate()
+    path = tmp_path / "k.json"
+    kp.save(path)
+    secret = bytes(json.loads(path.read_text())[:32]).hex()
+    out = []
+
+    def rpc(url, balance):
+        def post(u, payload):
+            r = {"getGenesisHash": DEVNET_GENESIS, "getBalance": {"value": balance}}[payload["method"]]
+            return {"jsonrpc": "2.0", "id": 1, "result": r}
+        return RpcClient(url, post=post)
+    assert cmd_devnet_check({"keypair": str(path), "rpc": "https://api.mainnet-beta.solana.com"}, out.append,
+                            rpc=rpc("https://api.mainnet-beta.solana.com", 10**9)) == 2
+    assert cmd_devnet_check({"keypair": str(path), "rpc": "x"}, out.append, rpc=rpc("https://api.devnet.solana.com", 0)) == 1
+    assert "not funded" in out[-1] and not (tmp_path / "out").exists()
+    assert secret not in " ".join(out) and kp.address in " ".join(out)
+    a, b = check_signals(1), check_signals(1)
+    assert a == b and len(a) == 10 and [s.leader_seq for s in check_signals(5)] == list(range(5, 15))
