@@ -34,3 +34,30 @@ def capture(log_dir: str) -> dict:
         "log_mount": mount or "unknown", "power": _run("pmset", "-g", "batt").splitlines()[0:2],
         "git_commit": _run("git", "rev-parse", "HEAD") + (" (+uncommitted changes)" if dirty else ""),
     }
+
+
+def capture_docker() -> dict:
+    """Docker Desktop VM facts: the VM's CPU/RAM is a second limit on top of the container's."""
+    import json as _json
+    info = {}
+    try:
+        info = _json.loads(_run("docker", "info", "--format", "{{json .}}"))
+    except ValueError:
+        pass
+    settings = {}
+    path = os.path.expanduser("~/Library/Group Containers/group.com.docker/settings-store.json")
+    if os.path.exists(path):
+        raw = _json.load(open(path))
+        settings = {k: raw[k] for k in ("Cpus", "MemoryMiB", "SwapMiB", "DiskSizeMiB", "UseVirtualizationFramework",
+                                         "UseVirtualizationFrameworkVirtioFS", "VmType", "DisplayedOnboarding")
+                    if k in raw}
+    return {
+        "docker_version": _run("docker", "--version"),
+        "docker_vm": {"kernel": info.get("KernelVersion"), "os": info.get("OperatingSystem"),
+                      "arch": info.get("Architecture"), "vm_cpus": info.get("NCPU"),
+                      "vm_memory_bytes": info.get("MemTotal"), "server_version": info.get("ServerVersion"),
+                      "storage_driver": info.get("Driver")},
+        "docker_desktop_settings": settings,
+        "load_generator": "runs on the macOS host (outside the container) and connects through Docker "
+                          "Desktop's published port 127.0.0.1:<port>",
+    }

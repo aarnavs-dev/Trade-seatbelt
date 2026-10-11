@@ -1,9 +1,15 @@
 """Append-only log: writer with a fsync policy, and a verifying reader."""
 
 import os
+import sys
 from typing import Iterator
 
 from pydantic import ValidationError
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover (Windows)
+    fcntl = None
 
 from core.canon import GENESIS, canon, event_hash
 from core.events import Event
@@ -53,12 +59,15 @@ def scan(path) -> Iterator[Event]:
 
 class LogWriter:
     """policy: per_order and batched both fsync before the caller is answered (the gate decides
-    how many events share one fsync); none never fsyncs and is for benchmarks only."""
+    how many events share one fsync); none never fsyncs and is for benchmarks only.
+    full_fsync (macOS only): use F_FULLFSYNC instead of os.fsync."""
 
-    def __init__(self, path, policy: str):
+    def __init__(self, path, policy: str, full_fsync: bool = False):
         if policy not in FSYNC_POLICIES:
             raise ValueError(f"fsync policy must be one of {FSYNC_POLICIES}")
-        self.policy = policy
+        if full_fsync and not (sys.platform == "darwin" and hasattr(fcntl, "F_FULLFSYNC")):
+            raise ValueError("full_fsync (F_FULLFSYNC) is only available on macOS")
+        self.policy, self.full_fsync = policy, full_fsync
         self.fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
 
     def write(self, data: bytes) -> None:
@@ -66,7 +75,10 @@ class LogWriter:
         while view:
             view = view[os.write(self.fd, view):]
         if self.policy != "none":
-            os.fsync(self.fd)  # note: on macOS this does not force the drive cache (F_FULLFSYNC)
+            if self.full_fsync:  # macOS: also flush the drive's own cache
+                fcntl.fcntl(self.fd, fcntl.F_FULLFSYNC)
+            else:  # on macOS this hands data to the drive but does not force its cache
+                os.fsync(self.fd)
 
     def close(self) -> None:
         os.close(self.fd)

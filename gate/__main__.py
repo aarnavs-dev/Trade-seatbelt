@@ -11,13 +11,13 @@ from gate.server import start_server
 
 
 async def main(args) -> None:
-    gate = Gate(load_rules(args.rules), args.log, args.fsync, args.batch_max)
+    gate = Gate(load_rules(args.rules), args.log, args.fsync, args.batch_max, full_fsync=args.full_fsync)
     try:
         await gate.start()
     except ChainError as e:
         raise SystemExit(f"refusing to start: {e}")
     server = await start_server(gate, args.host, args.port)
-    print(f"gate listening on {args.host}:{args.port} log={args.log} fsync={args.fsync} "
+    print(f"gate listening on {args.host}:{args.port} log={args.log} fsync={args.fsync}{'+F_FULLFSYNC' if args.full_fsync else ''} "
           f"batch_max={gate.batch_max} replayed_events={gate.book.last_seq}", flush=True)
     stop = asyncio.Event()
     profile_path = os.environ.get("GATE_PROFILE")  # benchmark hook, off by default
@@ -40,6 +40,7 @@ if __name__ == "__main__":
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=9101)
     p.add_argument("--fsync", choices=FSYNC_POLICIES, default="batched")
+    p.add_argument("--full-fsync", action="store_true", help="macOS only: F_FULLFSYNC instead of os.fsync")
     p.add_argument("--batch-max", type=int, default=256)
     args = p.parse_args()
     try:

@@ -1,7 +1,7 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: setup demo test bench clean
+.PHONY: setup demo test bench bench-docker clean
 
 setup:
 	$(PYTHON312) -m venv .venv
@@ -19,4 +19,9 @@ clean:
 
 bench:
 	$(PY) -m bench.run --orders $(or $(BENCH_N),100000) --reps $(or $(BENCH_REPS),3) --label final
+	$(PY) -m bench.report
+
+bench-docker:
+	docker build -t trade-seatbelt-gate .
+	$(PY) -m bench.run --backend docker --orders $(or $(BENCH_N),100000) --reps $(or $(BENCH_REPS),3) --label docker
 	$(PY) -m bench.report

@@ -29,9 +29,9 @@ def _err(msg: str) -> bytes:
 
 class Gate:
     def __init__(self, rules, log_path, fsync="batched", batch_max=256, clock=time.time_ns,
-                 queue_size=10_000):
+                 queue_size=10_000, full_fsync=False):
         self.rules, self.log_path, self.clock = rules, log_path, clock
-        self.fsync = fsync
+        self.fsync, self.full_fsync = fsync, full_fsync
         # per_order means exactly one event per fsync; batched is group commit of whatever is queued
         self.batch_max = 1 if fsync == "per_order" else batch_max
         self.queue_size = queue_size
@@ -41,7 +41,7 @@ class Gate:
     async def start(self) -> None:
         for ev in scan(self.log_path):  # rebuild state; refuses to start on a broken chain
             self.book.apply(ev)
-        self.writer = LogWriter(self.log_path, self.fsync)
+        self.writer = LogWriter(self.log_path, self.fsync, self.full_fsync)
         self.queue: asyncio.Queue = asyncio.Queue(self.queue_size)
         self.closed = False
         self.task = asyncio.create_task(self._run())

@@ -2246,7 +2246,7 @@
     "MAX_POSITION": 1578,
     "LOSS_STREAK_COOLDOWN": 300
    },
-   "profile_file": "/Users/aarnav.shedge/Desktop/trade-seatbelt/bench/runs/before_opt_profile_per_order/gate.prof"
+   "profile_file": "bench/runs/before_opt_profile_per_order/gate.prof"
   },
   {
    "id": "before_opt_profile_batched",
@@ -2269,9 +2269,9 @@
     "MAX_POSITION": 1578,
     "LOSS_STREAK_COOLDOWN": 300
    },
-   "profile_file": "/Users/aarnav.shedge/Desktop/trade-seatbelt/bench/runs/before_opt_profile_batched/gate.prof"
+   "profile_file": "bench/runs/before_opt_profile_batched/gate.prof"
   }
  ],
  "recovery": [],
- "command": "/Users/aarnav.shedge/Desktop/trade-seatbelt/bench/run.py --orders 20000 --reps 3 --recovery --label before_opt"
+ "command": "python -m bench.run --orders 20000 --reps 3 --recovery --label before_opt"
 }

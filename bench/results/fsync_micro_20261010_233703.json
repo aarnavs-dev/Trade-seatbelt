@@ -1,0 +1,15 @@
+{
+ "calls": 300,
+ "bytes_per_write": 330,
+ "dir": "temp dir on the same volume as the benchmark logs",
+ "os.fsync": {
+  "median_us": 18.93750231829472,
+  "p99_us": 36.20800271164626,
+  "max_us": 40.37500184495002
+ },
+ "F_FULLFSYNC": {
+  "median_us": 3941.6250001522712,
+  "p99_us": 5074.499997135717,
+  "max_us": 75889.62499721674
+ }
+}

@@ -1,0 +1,2372 @@
+{
+ "label": "final",
+ "orders": 100000,
+ "reps": 3,
+ "warmup": 5000,
+ "environment": {
+  "cpu_model": "Apple M5",
+  "cpu_cores_logical": 10,
+  "cpu_cores_physical": 10,
+  "ram_bytes": 17179869184,
+  "os": "Darwin 26.7 (arm64)",
+  "python": "3.12.15",
+  "uvloop": "0.23.0",
+  "docker": "Docker version 29.8.2, build 7fc2dff",
+  "limits": "NONE enforced: gate ran natively, not in a container (no --cpus / --memory)",
+  "log_filesystem": "/dev/disk3s5   460Gi   102Gi   327Gi    24%    783k  3.4G    0%   /System/Volumes/Data",
+  "log_mount": "/dev/disk3s5 on /System/Volumes/Data (apfs, local, journaled, nobrowse, protect, root data)",
+  "power": [
+   "Now drawing from 'Battery Power'",
+   " -InternalBattery-0 (id=22806627)\t83%; discharging; 14:36 remaining present: true"
+  ],
+  "git_commit": "fd47adb76d18565893d837c120d0b8c324bdd88c"
+ },
+ "workload": {
+  "n": 100000,
+  "main": 99694,
+  "accepted": 83840,
+  "rejected": 16160,
+  "by_reason": {
+   "LOSS_STREAK_COOLDOWN": 300,
+   "MAX_POSITION": 8079,
+   "OK": 83840,
+   "PRICE_BAND": 7781
+  }
+ },
+ "runs": [
+  {
+   "id": "final_per_order_closed_1_r0",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 11139.16255569107,
+   "measured_orders": 94694,
+   "window_s": 8.500998125,
+   "gate_cpu_pct": 46.236981334330316,
+   "gate_peak_rss_mb": 200.921875,
+   "lat_us": {
+    "p50": 86.5,
+    "p99": 108.333,
+    "p99.9": 191.0,
+    "max": 14555.459,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151136.6229724195,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_per_order_closed_8_r0",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 20917.69846889368,
+   "measured_orders": 94694,
+   "window_s": 4.526979875,
+   "gate_cpu_pct": 78.03814849753725,
+   "gate_peak_rss_mb": 200.984375,
+   "lat_us": {
+    "p50": 365.333,
+    "p99": 663.75,
+    "p99.9": 1675.667,
+    "max": 15137.292,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 149487.7615737104,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_per_order_closed_32_r0",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 21035.95324002472,
+   "measured_orders": 94694,
+   "window_s": 4.501531208,
+   "gate_cpu_pct": 78.87397599533371,
+   "gate_peak_rss_mb": 201.046875,
+   "lat_us": {
+    "p50": 1417.083,
+    "p99": 2011.334,
+    "p99.9": 6127.0,
+    "max": 16588.125,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156692.09425726955,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_per_order_pipelined_1_r0",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 33394.74262110004,
+   "measured_orders": 94694,
+   "window_s": 2.835596042,
+   "gate_cpu_pct": 63.12053436432876,
+   "gate_peak_rss_mb": 200.9375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158587.04223211622,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_per_order_pipelined_8_r0",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 34487.90142755088,
+   "measured_orders": 94694,
+   "window_s": 2.7457165,
+   "gate_cpu_pct": 65.93005388877577,
+   "gate_peak_rss_mb": 201.640625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 160750.404234268,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_per_order_pipelined_32_r0",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 34882.62544307683,
+   "measured_orders": 94694,
+   "window_s": 2.714646584,
+   "gate_cpu_pct": 64.37338479453946,
+   "gate_peak_rss_mb": 202.96875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 154377.14186322017,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_batched_closed_1_r0",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 11026.73741323918,
+   "measured_orders": 94694,
+   "window_s": 8.587671625,
+   "gate_cpu_pct": 46.61442778224461,
+   "gate_peak_rss_mb": 200.875,
+   "lat_us": {
+    "p50": 87.417,
+    "p99": 112.667,
+    "p99.9": 277.833,
+    "max": 14666.667,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 154089.9715929161,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_batched_closed_8_r0",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 28599.59384155155,
+   "measured_orders": 94694,
+   "window_s": 3.311026042,
+   "gate_cpu_pct": 89.32562583914269,
+   "gate_peak_rss_mb": 201.09375,
+   "lat_us": {
+    "p50": 270.792,
+    "p99": 330.708,
+    "p99.9": 730.625,
+    "max": 14938.417,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157446.56312896614,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_batched_closed_32_r0",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35483.82619704915,
+   "measured_orders": 94694,
+   "window_s": 2.668652458,
+   "gate_cpu_pct": 96.55830721005988,
+   "gate_peak_rss_mb": 201.203125,
+   "lat_us": {
+    "p50": 833.333,
+    "p99": 1232.375,
+    "p99.9": 5433.0,
+    "max": 15838.25,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159187.7710140147,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_batched_pipelined_1_r0",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 91361.49799898888,
+   "measured_orders": 94694,
+   "window_s": 1.036476,
+   "gate_cpu_pct": 95.4524586640518,
+   "gate_peak_rss_mb": 201.21875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 150433.0498909469,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_batched_pipelined_8_r0",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 102245.83018918282,
+   "measured_orders": 94694,
+   "window_s": 0.926140458,
+   "gate_cpu_pct": 95.82937234532712,
+   "gate_peak_rss_mb": 201.890625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157139.06335610466,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_batched_pipelined_32_r0",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 100533.13178210203,
+   "measured_orders": 94694,
+   "window_s": 0.941918334,
+   "gate_cpu_pct": 97.04006229123695,
+   "gate_peak_rss_mb": 203.40625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158501.43235751314,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_none_closed_1_r0",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 12774.990622620084,
+   "measured_orders": 94694,
+   "window_s": 7.412451625,
+   "gate_cpu_pct": 44.89832827504988,
+   "gate_peak_rss_mb": 200.875,
+   "lat_us": {
+    "p50": 74.292,
+    "p99": 97.25,
+    "p99.9": 200.584,
+    "max": 14651.0,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156164.57699976183,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_none_closed_8_r0",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35124.610317460174,
+   "measured_orders": 94694,
+   "window_s": 2.6959445,
+   "gate_cpu_pct": 99.29513556714997,
+   "gate_peak_rss_mb": 201.078125,
+   "lat_us": {
+    "p50": 219.709,
+    "p99": 280.208,
+    "p99.9": 535.167,
+    "max": 15598.583,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155363.67837467758,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_none_closed_32_r0",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 36713.83863380297,
+   "measured_orders": 94694,
+   "window_s": 2.579245416,
+   "gate_cpu_pct": 99.17226151216542,
+   "gate_peak_rss_mb": 201.125,
+   "lat_us": {
+    "p50": 806.125,
+    "p99": 1175.625,
+    "p99.9": 5682.041,
+    "max": 17245.125,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 152469.12309697506,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_none_pipelined_1_r0",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 87971.35379815345,
+   "measured_orders": 94694,
+   "window_s": 1.076418583,
+   "gate_cpu_pct": 98.69224311980837,
+   "gate_peak_rss_mb": 201.1875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 150013.24797038152,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_none_pipelined_8_r0",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 109047.6673651522,
+   "measured_orders": 94694,
+   "window_s": 0.868372541,
+   "gate_cpu_pct": 98.23444848951827,
+   "gate_peak_rss_mb": 201.765625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156120.22506349653,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_none_pipelined_32_r0",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 107200.95706384424,
+   "measured_orders": 94694,
+   "window_s": 0.883331666,
+   "gate_cpu_pct": 98.04917676152793,
+   "gate_peak_rss_mb": 203.078125,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158981.44834033426,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "final_per_order_closed_1_r1",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 11312.568357942067,
+   "measured_orders": 94694,
+   "window_s": 8.37068975,
+   "gate_cpu_pct": 45.559146661768196,
+   "gate_peak_rss_mb": 200.9375,
+   "lat_us": {
+    "p50": 84.792,
+    "p99": 110.125,
+    "p99.9": 242.25,
+    "max": 14389.834,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159345.0705981934,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_per_order_closed_8_r1",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 21422.179553615046,
+   "measured_orders": 94694,
+   "window_s": 4.420371875,
+   "gate_cpu_pct": 78.58832269377619,
+   "gate_peak_rss_mb": 201.078125,
+   "lat_us": {
+    "p50": 364.833,
+    "p99": 439.833,
+    "p99.9": 794.333,
+    "max": 14891.166,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151890.43780627934,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_per_order_closed_32_r1",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 21042.221689132653,
+   "measured_orders": 94694,
+   "window_s": 4.500190208,
+   "gate_cpu_pct": 78.99409388386209,
+   "gate_peak_rss_mb": 201.296875,
+   "lat_us": {
+    "p50": 1404.5,
+    "p99": 1960.084,
+    "p99.9": 8775.625,
+    "max": 16635.667,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156692.11463589396,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_per_order_pipelined_1_r1",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 34013.062993166786,
+   "measured_orders": 94694,
+   "window_s": 2.784048,
+   "gate_cpu_pct": 63.3943157578034,
+   "gate_peak_rss_mb": 201.046875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157178.04647875417,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_per_order_pipelined_8_r1",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 34278.33742623852,
+   "measured_orders": 94694,
+   "window_s": 2.762502709,
+   "gate_cpu_pct": 66.46509236397895,
+   "gate_peak_rss_mb": 201.84375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 160689.2819458474,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_per_order_pipelined_32_r1",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35199.949788234764,
+   "measured_orders": 94694,
+   "window_s": 2.690174292,
+   "gate_cpu_pct": 65.70723045856154,
+   "gate_peak_rss_mb": 203.328125,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155547.07087809313,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_batched_closed_1_r1",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 11601.018571488756,
+   "measured_orders": 94694,
+   "window_s": 8.162559125,
+   "gate_cpu_pct": 45.490262882213344,
+   "gate_peak_rss_mb": 201.015625,
+   "lat_us": {
+    "p50": 83.583,
+    "p99": 101.75,
+    "p99.9": 119.417,
+    "max": 14339.75,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 153888.1968119924,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_batched_closed_8_r1",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 28542.868822965356,
+   "measured_orders": 94694,
+   "window_s": 3.31760625,
+   "gate_cpu_pct": 89.26936484289911,
+   "gate_peak_rss_mb": 201.15625,
+   "lat_us": {
+    "p50": 271.291,
+    "p99": 316.084,
+    "p99.9": 554.25,
+    "max": 14827.5,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157137.68452976702,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_batched_closed_32_r1",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35450.142621459876,
+   "measured_orders": 94694,
+   "window_s": 2.671188125,
+   "gate_cpu_pct": 96.66511026897997,
+   "gate_peak_rss_mb": 201.03125,
+   "lat_us": {
+    "p50": 830.084,
+    "p99": 1222.167,
+    "p99.9": 5418.375,
+    "max": 15682.0,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155001.4812330752,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_batched_pipelined_1_r1",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 90802.90997867454,
+   "measured_orders": 94694,
+   "window_s": 1.042852041,
+   "gate_cpu_pct": 95.77390453371385,
+   "gate_peak_rss_mb": 201.125,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157465.27095129964,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_batched_pipelined_8_r1",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 109094.23966619665,
+   "measured_orders": 94694,
+   "window_s": 0.868001833,
+   "gate_cpu_pct": 97.59359293722163,
+   "gate_peak_rss_mb": 201.59375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156902.6988008429,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_batched_pipelined_32_r1",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 107506.35166369383,
+   "measured_orders": 94694,
+   "window_s": 0.880822375,
+   "gate_cpu_pct": 97.89801367925539,
+   "gate_peak_rss_mb": 203.34375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159991.2752275091,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_none_closed_1_r1",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 13190.799593497039,
+   "measured_orders": 94694,
+   "window_s": 7.1787915,
+   "gate_cpu_pct": 44.54860724302103,
+   "gate_peak_rss_mb": 200.734375,
+   "lat_us": {
+    "p50": 72.333,
+    "p99": 88.666,
+    "p99.9": 105.25,
+    "max": 14355.625,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 154002.14024441253,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_none_closed_8_r1",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35562.135716113444,
+   "measured_orders": 94694,
+   "window_s": 2.662775958,
+   "gate_cpu_pct": 99.16795649589199,
+   "gate_peak_rss_mb": 200.84375,
+   "lat_us": {
+    "p50": 217.542,
+    "p99": 261.791,
+    "p99.9": 513.417,
+    "max": 15094.875,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159361.14259824262,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_none_closed_32_r1",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 37793.525158862816,
+   "measured_orders": 94694,
+   "window_s": 2.505561458,
+   "gate_cpu_pct": 99.35398645647706,
+   "gate_peak_rss_mb": 201.484375,
+   "lat_us": {
+    "p50": 780.75,
+    "p99": 1082.208,
+    "p99.9": 5496.375,
+    "max": 16199.292,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159611.18714747907,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_none_pipelined_1_r1",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 89246.27359061828,
+   "measured_orders": 94694,
+   "window_s": 1.0610415,
+   "gate_cpu_pct": 98.99050855167704,
+   "gate_peak_rss_mb": 200.90625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155482.70910732634,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_none_pipelined_8_r1",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 110772.38556798114,
+   "measured_orders": 94694,
+   "window_s": 0.854852042,
+   "gate_cpu_pct": 98.1145128126295,
+   "gate_peak_rss_mb": 201.53125,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159518.17013555934,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_none_pipelined_32_r1",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 107538.2930706371,
+   "measured_orders": 94694,
+   "window_s": 0.88056075,
+   "gate_cpu_pct": 98.23969345610752,
+   "gate_peak_rss_mb": 203.203125,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159665.30957790944,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "final_per_order_closed_1_r2",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 11466.82850006514,
+   "measured_orders": 94694,
+   "window_s": 8.258081125,
+   "gate_cpu_pct": 45.27918005156707,
+   "gate_peak_rss_mb": 201.03125,
+   "lat_us": {
+    "p50": 84.083,
+    "p99": 103.167,
+    "p99.9": 120.625,
+    "max": 14729.791,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158509.0742985653,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_per_order_closed_8_r2",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 21764.274166117673,
+   "measured_orders": 94694,
+   "window_s": 4.350891708,
+   "gate_cpu_pct": 78.94205195634925,
+   "gate_peak_rss_mb": 200.953125,
+   "lat_us": {
+    "p50": 358.667,
+    "p99": 415.917,
+    "p99.9": 666.5,
+    "max": 15010.416,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 153947.6804465505,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_per_order_closed_32_r2",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 21399.937434279273,
+   "measured_orders": 94694,
+   "window_s": 4.424966208,
+   "gate_cpu_pct": 79.20795056341602,
+   "gate_peak_rss_mb": 200.96875,
+   "lat_us": {
+    "p50": 1371.75,
+    "p99": 1908.375,
+    "p99.9": 5940.084,
+    "max": 16704.875,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156828.55032380877,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_per_order_pipelined_1_r2",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 34364.795646854334,
+   "measured_orders": 94694,
+   "window_s": 2.755552542,
+   "gate_cpu_pct": 63.34655652569451,
+   "gate_peak_rss_mb": 201.0625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157516.4487372862,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_per_order_pipelined_8_r2",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 36265.22975258519,
+   "measured_orders": 94694,
+   "window_s": 2.61115125,
+   "gate_cpu_pct": 64.25476952204302,
+   "gate_peak_rss_mb": 201.71875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 160144.685470502,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_per_order_pipelined_32_r2",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 34791.204950485066,
+   "measured_orders": 94694,
+   "window_s": 2.721779833,
+   "gate_cpu_pct": 66.80758889731828,
+   "gate_peak_rss_mb": 203.40625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 162949.9924337693,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_batched_closed_1_r2",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 11523.139943822729,
+   "measured_orders": 94694,
+   "window_s": 8.217725417,
+   "gate_cpu_pct": 45.18585088334559,
+   "gate_peak_rss_mb": 201.0625,
+   "lat_us": {
+    "p50": 83.833,
+    "p99": 102.458,
+    "p99.9": 116.458,
+    "max": 14492.542,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 153331.91211080266,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_batched_closed_8_r2",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 28490.018349796406,
+   "measured_orders": 94694,
+   "window_s": 3.323760583,
+   "gate_cpu_pct": 89.42990649439712,
+   "gate_peak_rss_mb": 200.921875,
+   "lat_us": {
+    "p50": 271.5,
+    "p99": 336.125,
+    "p99.9": 682.708,
+    "max": 15725.916,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 156432.63705923525,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_batched_closed_32_r2",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35054.52203867369,
+   "measured_orders": 94694,
+   "window_s": 2.701334792,
+   "gate_cpu_pct": 96.23013615816602,
+   "gate_peak_rss_mb": 200.984375,
+   "lat_us": {
+    "p50": 831.917,
+    "p99": 1266.375,
+    "p99.9": 5785.125,
+    "max": 15866.709,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 150344.5334418597,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_batched_pipelined_1_r2",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 89363.00178323704,
+   "measured_orders": 94694,
+   "window_s": 1.059655541,
+   "gate_cpu_pct": 95.7745531965067,
+   "gate_peak_rss_mb": 201.234375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159477.5197499865,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_batched_pipelined_8_r2",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 109664.05250066397,
+   "measured_orders": 94694,
+   "window_s": 0.863491708,
+   "gate_cpu_pct": 97.27649894312638,
+   "gate_peak_rss_mb": 201.84375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155593.33728266042,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_batched_pipelined_32_r2",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 109582.33552748158,
+   "measured_orders": 94694,
+   "window_s": 0.864135625,
+   "gate_cpu_pct": 97.67006011154051,
+   "gate_peak_rss_mb": 203.140625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158718.30725954927,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_none_closed_1_r2",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 13168.631723590719,
+   "measured_orders": 94694,
+   "window_s": 7.190876166,
+   "gate_cpu_pct": 44.692517681384956,
+   "gate_peak_rss_mb": 200.90625,
+   "lat_us": {
+    "p50": 72.5,
+    "p99": 89.417,
+    "p99.9": 108.334,
+    "max": 14391.625,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158104.66230451135,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_none_closed_8_r2",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 35110.8167309193,
+   "measured_orders": 94694,
+   "window_s": 2.697003625,
+   "gate_cpu_pct": 98.75479933839155,
+   "gate_peak_rss_mb": 200.71875,
+   "lat_us": {
+    "p50": 219.084,
+    "p99": 270.291,
+    "p99.9": 556.25,
+    "max": 15092.083,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158199.03059647745,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_none_closed_32_r2",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 37405.59869473634,
+   "measured_orders": 94694,
+   "window_s": 2.531546167,
+   "gate_cpu_pct": 98.93937024846491,
+   "gate_peak_rss_mb": 201.4375,
+   "lat_us": {
+    "p50": 788.542,
+    "p99": 1117.25,
+    "p99.9": 6064.542,
+    "max": 15724.334,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159320.29704243352,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_none_pipelined_1_r2",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 88930.95193961235,
+   "measured_orders": 94694,
+   "window_s": 1.064803625,
+   "gate_cpu_pct": 98.64496685977407,
+   "gate_peak_rss_mb": 201.109375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155510.75701922938,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_none_pipelined_8_r2",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 110429.98264874116,
+   "measured_orders": 94694,
+   "window_s": 0.857502625,
+   "gate_cpu_pct": 98.2640922879547,
+   "gate_peak_rss_mb": 201.9375,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157267.25102249376,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "final_none_pipelined_32_r2",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 107394.70351310662,
+   "measured_orders": 94694,
+   "window_s": 0.881738083,
+   "gate_cpu_pct": 98.36078311854475,
+   "gate_peak_rss_mb": 203.546875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158813.07327119692,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  }
+ ],
+ "summary": [
+  {
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 11312.568357942067,
+    "min": 11139.16255569107,
+    "max": 11466.82850006514
+   },
+   "gate_cpu_pct": {
+    "median": 45.559146661768196,
+    "min": 45.27918005156707,
+    "max": 46.236981334330316
+   },
+   "gate_peak_rss_mb": {
+    "median": 200.9375,
+    "min": 200.921875,
+    "max": 201.03125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 158509.0742985653,
+    "min": 151136.6229724195,
+    "max": 159345.0705981934
+   },
+   "lat_p50": {
+    "median": 84.792,
+    "min": 84.083,
+    "max": 86.5
+   },
+   "lat_p99": {
+    "median": 108.333,
+    "min": 103.167,
+    "max": 110.125
+   },
+   "lat_p99.9": {
+    "median": 191.0,
+    "min": 120.625,
+    "max": 242.25
+   },
+   "lat_max": {
+    "median": 14555.459,
+    "min": 14389.834,
+    "max": 14729.791
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 21422.179553615046,
+    "min": 20917.69846889368,
+    "max": 21764.274166117673
+   },
+   "gate_cpu_pct": {
+    "median": 78.58832269377619,
+    "min": 78.03814849753725,
+    "max": 78.94205195634925
+   },
+   "gate_peak_rss_mb": {
+    "median": 200.984375,
+    "min": 200.953125,
+    "max": 201.078125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 151890.43780627934,
+    "min": 149487.7615737104,
+    "max": 153947.6804465505
+   },
+   "lat_p50": {
+    "median": 364.833,
+    "min": 358.667,
+    "max": 365.333
+   },
+   "lat_p99": {
+    "median": 439.833,
+    "min": 415.917,
+    "max": 663.75
+   },
+   "lat_p99.9": {
+    "median": 794.333,
+    "min": 666.5,
+    "max": 1675.667
+   },
+   "lat_max": {
+    "median": 15010.416,
+    "min": 14891.166,
+    "max": 15137.292
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 21042.221689132653,
+    "min": 21035.95324002472,
+    "max": 21399.937434279273
+   },
+   "gate_cpu_pct": {
+    "median": 78.99409388386209,
+    "min": 78.87397599533371,
+    "max": 79.20795056341602
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.046875,
+    "min": 200.96875,
+    "max": 201.296875
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 156692.11463589396,
+    "min": 156692.09425726955,
+    "max": 156828.55032380877
+   },
+   "lat_p50": {
+    "median": 1404.5,
+    "min": 1371.75,
+    "max": 1417.083
+   },
+   "lat_p99": {
+    "median": 1960.084,
+    "min": 1908.375,
+    "max": 2011.334
+   },
+   "lat_p99.9": {
+    "median": 6127.0,
+    "min": 5940.084,
+    "max": 8775.625
+   },
+   "lat_max": {
+    "median": 16635.667,
+    "min": 16588.125,
+    "max": 16704.875
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 34013.062993166786,
+    "min": 33394.74262110004,
+    "max": 34364.795646854334
+   },
+   "gate_cpu_pct": {
+    "median": 63.34655652569451,
+    "min": 63.12053436432876,
+    "max": 63.3943157578034
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.046875,
+    "min": 200.9375,
+    "max": 201.0625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 157516.4487372862,
+    "min": 157178.04647875417,
+    "max": 158587.04223211622
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 34487.90142755088,
+    "min": 34278.33742623852,
+    "max": 36265.22975258519
+   },
+   "gate_cpu_pct": {
+    "median": 65.93005388877577,
+    "min": 64.25476952204302,
+    "max": 66.46509236397895
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.71875,
+    "min": 201.640625,
+    "max": 201.84375
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 160689.2819458474,
+    "min": 160144.685470502,
+    "max": 160750.404234268
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 34882.62544307683,
+    "min": 34791.204950485066,
+    "max": 35199.949788234764
+   },
+   "gate_cpu_pct": {
+    "median": 65.70723045856154,
+    "min": 64.37338479453946,
+    "max": 66.80758889731828
+   },
+   "gate_peak_rss_mb": {
+    "median": 203.328125,
+    "min": 202.96875,
+    "max": 203.40625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 155547.07087809313,
+    "min": 154377.14186322017,
+    "max": 162949.9924337693
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 11523.139943822729,
+    "min": 11026.73741323918,
+    "max": 11601.018571488756
+   },
+   "gate_cpu_pct": {
+    "median": 45.490262882213344,
+    "min": 45.18585088334559,
+    "max": 46.61442778224461
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.015625,
+    "min": 200.875,
+    "max": 201.0625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 153888.1968119924,
+    "min": 153331.91211080266,
+    "max": 154089.9715929161
+   },
+   "lat_p50": {
+    "median": 83.833,
+    "min": 83.583,
+    "max": 87.417
+   },
+   "lat_p99": {
+    "median": 102.458,
+    "min": 101.75,
+    "max": 112.667
+   },
+   "lat_p99.9": {
+    "median": 119.417,
+    "min": 116.458,
+    "max": 277.833
+   },
+   "lat_max": {
+    "median": 14492.542,
+    "min": 14339.75,
+    "max": 14666.667
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 28542.868822965356,
+    "min": 28490.018349796406,
+    "max": 28599.59384155155
+   },
+   "gate_cpu_pct": {
+    "median": 89.32562583914269,
+    "min": 89.26936484289911,
+    "max": 89.42990649439712
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.09375,
+    "min": 200.921875,
+    "max": 201.15625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 157137.68452976702,
+    "min": 156432.63705923525,
+    "max": 157446.56312896614
+   },
+   "lat_p50": {
+    "median": 271.291,
+    "min": 270.792,
+    "max": 271.5
+   },
+   "lat_p99": {
+    "median": 330.708,
+    "min": 316.084,
+    "max": 336.125
+   },
+   "lat_p99.9": {
+    "median": 682.708,
+    "min": 554.25,
+    "max": 730.625
+   },
+   "lat_max": {
+    "median": 14938.417,
+    "min": 14827.5,
+    "max": 15725.916
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 35450.142621459876,
+    "min": 35054.52203867369,
+    "max": 35483.82619704915
+   },
+   "gate_cpu_pct": {
+    "median": 96.55830721005988,
+    "min": 96.23013615816602,
+    "max": 96.66511026897997
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.03125,
+    "min": 200.984375,
+    "max": 201.203125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 155001.4812330752,
+    "min": 150344.5334418597,
+    "max": 159187.7710140147
+   },
+   "lat_p50": {
+    "median": 831.917,
+    "min": 830.084,
+    "max": 833.333
+   },
+   "lat_p99": {
+    "median": 1232.375,
+    "min": 1222.167,
+    "max": 1266.375
+   },
+   "lat_p99.9": {
+    "median": 5433.0,
+    "min": 5418.375,
+    "max": 5785.125
+   },
+   "lat_max": {
+    "median": 15838.25,
+    "min": 15682.0,
+    "max": 15866.709
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 90802.90997867454,
+    "min": 89363.00178323704,
+    "max": 91361.49799898888
+   },
+   "gate_cpu_pct": {
+    "median": 95.77390453371385,
+    "min": 95.4524586640518,
+    "max": 95.7745531965067
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.21875,
+    "min": 201.125,
+    "max": 201.234375
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 157465.27095129964,
+    "min": 150433.0498909469,
+    "max": 159477.5197499865
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 109094.23966619665,
+    "min": 102245.83018918282,
+    "max": 109664.05250066397
+   },
+   "gate_cpu_pct": {
+    "median": 97.27649894312638,
+    "min": 95.82937234532712,
+    "max": 97.59359293722163
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.84375,
+    "min": 201.59375,
+    "max": 201.890625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 156902.6988008429,
+    "min": 155593.33728266042,
+    "max": 157139.06335610466
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 107506.35166369383,
+    "min": 100533.13178210203,
+    "max": 109582.33552748158
+   },
+   "gate_cpu_pct": {
+    "median": 97.67006011154051,
+    "min": 97.04006229123695,
+    "max": 97.89801367925539
+   },
+   "gate_peak_rss_mb": {
+    "median": 203.34375,
+    "min": 203.140625,
+    "max": 203.40625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 158718.30725954927,
+    "min": 158501.43235751314,
+    "max": 159991.2752275091
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 13168.631723590719,
+    "min": 12774.990622620084,
+    "max": 13190.799593497039
+   },
+   "gate_cpu_pct": {
+    "median": 44.692517681384956,
+    "min": 44.54860724302103,
+    "max": 44.89832827504988
+   },
+   "gate_peak_rss_mb": {
+    "median": 200.875,
+    "min": 200.734375,
+    "max": 200.90625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 156164.57699976183,
+    "min": 154002.14024441253,
+    "max": 158104.66230451135
+   },
+   "lat_p50": {
+    "median": 72.5,
+    "min": 72.333,
+    "max": 74.292
+   },
+   "lat_p99": {
+    "median": 89.417,
+    "min": 88.666,
+    "max": 97.25
+   },
+   "lat_p99.9": {
+    "median": 108.334,
+    "min": 105.25,
+    "max": 200.584
+   },
+   "lat_max": {
+    "median": 14391.625,
+    "min": 14355.625,
+    "max": 14651.0
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 35124.610317460174,
+    "min": 35110.8167309193,
+    "max": 35562.135716113444
+   },
+   "gate_cpu_pct": {
+    "median": 99.16795649589199,
+    "min": 98.75479933839155,
+    "max": 99.29513556714997
+   },
+   "gate_peak_rss_mb": {
+    "median": 200.84375,
+    "min": 200.71875,
+    "max": 201.078125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 158199.03059647745,
+    "min": 155363.67837467758,
+    "max": 159361.14259824262
+   },
+   "lat_p50": {
+    "median": 219.084,
+    "min": 217.542,
+    "max": 219.709
+   },
+   "lat_p99": {
+    "median": 270.291,
+    "min": 261.791,
+    "max": 280.208
+   },
+   "lat_p99.9": {
+    "median": 535.167,
+    "min": 513.417,
+    "max": 556.25
+   },
+   "lat_max": {
+    "median": 15094.875,
+    "min": 15092.083,
+    "max": 15598.583
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 37405.59869473634,
+    "min": 36713.83863380297,
+    "max": 37793.525158862816
+   },
+   "gate_cpu_pct": {
+    "median": 99.17226151216542,
+    "min": 98.93937024846491,
+    "max": 99.35398645647706
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.4375,
+    "min": 201.125,
+    "max": 201.484375
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 159320.29704243352,
+    "min": 152469.12309697506,
+    "max": 159611.18714747907
+   },
+   "lat_p50": {
+    "median": 788.542,
+    "min": 780.75,
+    "max": 806.125
+   },
+   "lat_p99": {
+    "median": 1117.25,
+    "min": 1082.208,
+    "max": 1175.625
+   },
+   "lat_p99.9": {
+    "median": 5682.041,
+    "min": 5496.375,
+    "max": 6064.542
+   },
+   "lat_max": {
+    "median": 16199.292,
+    "min": 15724.334,
+    "max": 17245.125
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 88930.95193961235,
+    "min": 87971.35379815345,
+    "max": 89246.27359061828
+   },
+   "gate_cpu_pct": {
+    "median": 98.69224311980837,
+    "min": 98.64496685977407,
+    "max": 98.99050855167704
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.109375,
+    "min": 200.90625,
+    "max": 201.1875
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 155482.70910732634,
+    "min": 150013.24797038152,
+    "max": 155510.75701922938
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 110429.98264874116,
+    "min": 109047.6673651522,
+    "max": 110772.38556798114
+   },
+   "gate_cpu_pct": {
+    "median": 98.23444848951827,
+    "min": 98.1145128126295,
+    "max": 98.2640922879547
+   },
+   "gate_peak_rss_mb": {
+    "median": 201.765625,
+    "min": 201.53125,
+    "max": 201.9375
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 157267.25102249376,
+    "min": 156120.22506349653,
+    "max": 159518.17013555934
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 107394.70351310662,
+    "min": 107200.95706384424,
+    "max": 107538.2930706371
+   },
+   "gate_cpu_pct": {
+    "median": 98.23969345610752,
+    "min": 98.04917676152793,
+    "max": 98.36078311854475
+   },
+   "gate_peak_rss_mb": {
+    "median": 203.203125,
+    "min": 203.078125,
+    "max": 203.546875
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 158981.44834033426,
+    "min": 158813.07327119692,
+    "max": 159665.30957790944
+   }
+  }
+ ],
+ "profiles": [
+  {
+   "id": "final_profile_per_order",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 24758.865206040737,
+   "measured_orders": 94694,
+   "window_s": 3.82465025,
+   "gate_cpu_pct": 74.84396620247485,
+   "gate_peak_rss_mb": 201.890625,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 159046.35803745978,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "profile_file": "bench/runs/final_profile_per_order/gate.prof",
+   "profile": {
+    "profiled_seconds": 3.802254817999998,
+    "share_pct": {
+     "fsync": 39.372114854402184,
+     "log write syscall": 6.816632219729366,
+     "sha256 hashing": 1.1341389271401543,
+     "orjson + pydantic (parse, validate, dump)": 11.303646377547972,
+     "socket send (StreamWriter.write)": 0.4213272062714238,
+     "check / book / ledger code": 14.607451514576537,
+     "gate engine + server code": 9.607872761988048,
+     "asyncio queues, streams, tasks (Python)": 9.257171937391185,
+     "event loop core, socket reads, idle": 7.479644200953187
+    },
+    "seconds": {
+     "fsync": 1.497028134,
+     "log write syscall": 0.25918572700000003,
+     "sha256 hashing": 0.043122852,
+     "orjson + pydantic (parse, validate, dump)": 0.429793439,
+     "socket send (StreamWriter.write)": 0.016019934,
+     "check / book / ledger code": 0.555412529,
+     "gate engine + server code": 0.36531580500000005,
+     "asyncio queues, streams, tasks (Python)": 0.3519812660000001,
+     "event loop core, socket reads, idle": 0.284395132
+    },
+    "fsync_calls": 94694
+   }
+  },
+  {
+   "id": "final_profile_batched",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 49204.94596452394,
+   "measured_orders": 94694,
+   "window_s": 1.924481333,
+   "gate_cpu_pct": 98.2846865726817,
+   "gate_peak_rss_mb": 202.296875,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155408.195329086,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "profile_file": "bench/runs/final_profile_batched/gate.prof",
+   "profile": {
+    "profiled_seconds": 1.91206844,
+    "share_pct": {
+     "fsync": 1.0532310234669215,
+     "log write syscall": 0.3415215095543337,
+     "sha256 hashing": 2.043984785398163,
+     "orjson + pydantic (parse, validate, dump)": 21.864568613454026,
+     "socket send (StreamWriter.write)": 0.7880808910794009,
+     "check / book / ledger code": 26.474189543131626,
+     "gate engine + server code": 16.238263835367736,
+     "asyncio queues, streams, tasks (Python)": 16.927382369221057,
+     "event loop core, socket reads, idle": 14.268777429326756
+    },
+    "seconds": {
+     "fsync": 0.020138498,
+     "log write syscall": 0.006530125,
+     "sha256 hashing": 0.039082388,
+     "orjson + pydantic (parse, validate, dump)": 0.418065516,
+     "socket send (StreamWriter.write)": 0.015068646000000002,
+     "check / book / ledger code": 0.506204623,
+     "gate engine + server code": 0.31048671800000005,
+     "asyncio queues, streams, tasks (Python)": 0.32366313600000013,
+     "event loop core, socket reads, idle": 0.2728287900000002
+    },
+    "fsync_calls": 437
+   }
+  }
+ ],
+ "recovery": [
+  {
+   "events": 10000,
+   "log_mb": 3.365396499633789,
+   "valid": true,
+   "startup_s": [
+    0.17362929199953214,
+    0.20175920800102176,
+    0.20208529099909356
+   ],
+   "baseline_empty_log_s": 0.12118437499884749,
+   "recovery_s_median": 0.08057483300217427,
+   "peak_rss_mb": 55.71875,
+   "auditor_replay_events_per_sec": 128076.02592938216
+  },
+  {
+   "events": 100000,
+   "log_mb": 33.67504405975342,
+   "valid": true,
+   "startup_s": [
+    0.6689252500000293,
+    0.6896679999990738,
+    0.6717348749989469
+   ],
+   "baseline_empty_log_s": 0.12118437499884749,
+   "recovery_s_median": 0.5505505000000994,
+   "peak_rss_mb": 211.1875,
+   "auditor_replay_events_per_sec": 149244.00442101798
+  },
+  {
+   "events": 1000000,
+   "log_mb": 337.65437507629395,
+   "valid": true,
+   "startup_s": [
+    6.405264417000581,
+    6.3488649999999325,
+    6.2464558749998105
+   ],
+   "baseline_empty_log_s": 0.12118437499884749,
+   "recovery_s_median": 6.227680625001085,
+   "peak_rss_mb": 1748.640625,
+   "auditor_replay_events_per_sec": 143757.8800963232
+  }
+ ],
+ "command": "python -m bench.run --orders 100000 --reps 3 --label final"
+}

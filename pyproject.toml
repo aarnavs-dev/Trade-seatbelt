@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 dependencies = ["orjson>=3.10", "pydantic>=2.7", "pyyaml>=6", "uvloop>=0.19"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "hypothesis>=6.100"]
+dev = ["pytest>=8", "hypothesis>=6.100", "psutil>=5.9"]
 
 [build-system]
 requires = ["setuptools>=68"]

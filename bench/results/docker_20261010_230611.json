@@ -1,0 +1,2363 @@
+{
+ "label": "docker",
+ "backend": "docker",
+ "orders": 100000,
+ "reps": 3,
+ "warmup": 5000,
+ "environment": {
+  "cpu_model": "Apple M5",
+  "cpu_cores_logical": 10,
+  "cpu_cores_physical": 10,
+  "ram_bytes": 17179869184,
+  "os": "Darwin 26.7 (arm64)",
+  "python": "3.12.15",
+  "uvloop": "0.23.0",
+  "docker": "Docker version 29.8.2, build 7fc2dff",
+  "limits": "ENFORCED on the gate container: --cpus=1 --memory=512m --memory-swap=512m",
+  "log_filesystem": "/dev/vda1       453G  1.5G  428G   1% /data",
+  "log_mount": "/dev/vda1 /data ext4 rw,relatime,discard 0 0",
+  "power": [
+   "Now drawing from 'Battery Power'",
+   " -InternalBattery-0 (id=22806627)\t79%; discharging; 12:46 remaining present: true"
+  ],
+  "git_commit": "fd47adb76d18565893d837c120d0b8c324bdd88c (+uncommitted changes)",
+  "docker_version": "Docker version 29.8.2, build 7fc2dff",
+  "docker_vm": {
+   "kernel": "7.0.14-linuxkit",
+   "os": "Docker Desktop",
+   "arch": "aarch64",
+   "vm_cpus": 10,
+   "vm_memory_bytes": 8319504384,
+   "server_version": "29.8.2",
+   "storage_driver": "overlayfs"
+  },
+  "docker_desktop_settings": {
+   "DisplayedOnboarding": true
+  },
+  "load_generator": "runs on the macOS host (outside the container) and connects through Docker Desktop's published port 127.0.0.1:<port>",
+  "container": {
+   "host_config": {
+    "NanoCpus": 1000000000,
+    "Memory": 536870912,
+    "MemorySwap": 536870912
+   },
+   "cgroup_cpu_max": "100000 100000",
+   "cgroup_memory_max": "536870912",
+   "log_filesystem": "/dev/vda1       453G  1.5G  428G   1% /data",
+   "log_mount": "/dev/vda1 /data ext4 rw,relatime,discard 0 0",
+   "processes_in_container": "UID                 PID                 PPID                C                   STIME               TTY                 TIME                CMD\nroot                6089                6065                8                   02:43               ?                   00:00:05            python -m gate --host 0.0.0.0 --port 9101 --rules rules_bench.yaml --log /data/gate.log --fsync per_order"
+  }
+ },
+ "workload": {
+  "n": 100000,
+  "main": 99694,
+  "accepted": 83840,
+  "rejected": 16160,
+  "by_reason": {
+   "LOSS_STREAK_COOLDOWN": 300,
+   "MAX_POSITION": 8079,
+   "OK": 83840,
+   "PRICE_BAND": 7781
+  }
+ },
+ "runs": [
+  {
+   "id": "docker_per_order_closed_1_r0",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "container": {
+    "host_config": {
+     "NanoCpus": 1000000000,
+     "Memory": 536870912,
+     "MemorySwap": 536870912
+    },
+    "cgroup_cpu_max": "100000 100000",
+    "cgroup_memory_max": "536870912",
+    "log_filesystem": "/dev/vda1       453G  1.5G  428G   1% /data",
+    "log_mount": "/dev/vda1 /data ext4 rw,relatime,discard 0 0",
+    "processes_in_container": "UID                 PID                 PPID                C                   STIME               TTY                 TIME                CMD\nroot                6089                6065                8                   02:43               ?                   00:00:05            python -m gate --host 0.0.0.0 --port 9101 --rules rules_bench.yaml --log /data/gate.log --fsync per_order"
+   },
+   "orders_per_sec": 1572.9410149196915,
+   "measured_orders": 94694,
+   "window_s": 60.201876041,
+   "gate_cpu_pct": 8.044571562357502,
+   "gate_peak_rss_mb": 195.94921875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 635.208,
+    "p99": 893.834,
+    "p99.9": 1833.208,
+    "max": 23939.25,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155825.67937029127,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_per_order_closed_8_r0",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3035.1729926054913,
+   "measured_orders": 94694,
+   "window_s": 31.198880667,
+   "gate_cpu_pct": 12.534158009509206,
+   "gate_peak_rss_mb": 196.04296875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 2540.0,
+    "p99": 4617.25,
+    "p99.9": 12514.458,
+    "max": 41794.666,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 146475.3276454498,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_per_order_closed_32_r0",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3174.1988391257883,
+   "measured_orders": 94694,
+   "window_s": 29.832409625,
+   "gate_cpu_pct": 11.681698004976356,
+   "gate_peak_rss_mb": 196.2109375,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 9849.958,
+    "p99": 13853.0,
+    "p99.9": 31567.625,
+    "max": 39272.542,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151978.03192836794,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_per_order_pipelined_1_r0",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 2332.2828303139063,
+   "measured_orders": 94694,
+   "window_s": 40.60142225,
+   "gate_cpu_pct": 6.747714361163789,
+   "gate_peak_rss_mb": 196.10546875,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 145873.45880601878,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_per_order_pipelined_8_r0",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1321.022599688855,
+   "measured_orders": 94694,
+   "window_s": 71.682346708,
+   "gate_cpu_pct": 4.369132909052027,
+   "gate_peak_rss_mb": 196.5234375,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 152925.24975548344,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_per_order_pipelined_32_r0",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1238.3589296078362,
+   "measured_orders": 94694,
+   "window_s": 76.46732925,
+   "gate_cpu_pct": 4.001095670540893,
+   "gate_peak_rss_mb": 198.48046875,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155313.5182123837,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_batched_closed_1_r0",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1117.3364535299875,
+   "measured_orders": 94694,
+   "window_s": 84.749763333,
+   "gate_cpu_pct": 6.104507902484622,
+   "gate_peak_rss_mb": 195.75,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 726.583,
+    "p99": 2730.083,
+    "p99.9": 4326.209,
+    "max": 118376.791,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 146863.38378555444,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_batched_closed_8_r0",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 7804.25758725208,
+   "measured_orders": 94694,
+   "window_s": 12.133633333,
+   "gate_cpu_pct": 21.638835853554134,
+   "gate_peak_rss_mb": 196.05078125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 971.375,
+    "p99": 1608.833,
+    "p99.9": 3444.917,
+    "max": 17752.334,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158319.44968071498,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_batched_closed_32_r0",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 15599.951911345148,
+   "measured_orders": 94694,
+   "window_s": 6.070146917,
+   "gate_cpu_pct": 32.61484486405883,
+   "gate_peak_rss_mb": 196.20703125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 1943.625,
+    "p99": 3067.5,
+    "p99.9": 11726.25,
+    "max": 18219.208,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155471.36781023143,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_batched_pipelined_1_r0",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 48360.4681826085,
+   "measured_orders": 94694,
+   "window_s": 1.958086916,
+   "gate_cpu_pct": 59.46763601172033,
+   "gate_peak_rss_mb": 196.28515625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 160691.64899615388,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_batched_pipelined_8_r0",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 64652.80301847192,
+   "measured_orders": 94694,
+   "window_s": 1.464654208,
+   "gate_cpu_pct": 77.1332915188675,
+   "gate_peak_rss_mb": 196.765625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 163004.01188917304,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_batched_pipelined_32_r0",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 65346.16756520649,
+   "measured_orders": 94694,
+   "window_s": 1.449113292,
+   "gate_cpu_pct": 81.51377856521655,
+   "gate_peak_rss_mb": 198.01171875,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 160367.60540151718,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_none_closed_1_r0",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3256.0825600322332,
+   "measured_orders": 94694,
+   "window_s": 29.082186417,
+   "gate_cpu_pct": 12.924588770955749,
+   "gate_peak_rss_mb": 195.99609375,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 313.167,
+    "p99": 422.583,
+    "p99.9": 1217.125,
+    "max": 27435.125,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151983.09433618296,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_none_closed_8_r0",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 17720.373685916882,
+   "measured_orders": 94694,
+   "window_s": 5.3437925,
+   "gate_cpu_pct": 48.84544076140681,
+   "gate_peak_rss_mb": 196.046875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 435.625,
+    "p99": 707.417,
+    "p99.9": 1554.125,
+    "max": 16034.25,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 141419.27910522267,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_none_closed_32_r0",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 25639.53355514549,
+   "measured_orders": 94694,
+   "window_s": 3.693280917,
+   "gate_cpu_pct": 79.31197398272535,
+   "gate_peak_rss_mb": 196.203125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 1162.167,
+    "p99": 2790.166,
+    "p99.9": 16667.166,
+    "max": 21868.75,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 147148.98842293423,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_none_pipelined_1_r0",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 58494.518556647214,
+   "measured_orders": 94694,
+   "window_s": 1.618852541,
+   "gate_cpu_pct": 88.25893426447665,
+   "gate_peak_rss_mb": 196.36328125,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 141404.75622353255,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_none_pipelined_8_r0",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 76102.12419654342,
+   "measured_orders": 94694,
+   "window_s": 1.244301667,
+   "gate_cpu_pct": 100.57151197242588,
+   "gate_peak_rss_mb": 196.8203125,
+   "gate_throttled_ms": 0.217,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 148465.08437205353,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_none_pipelined_32_r0",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 75080.71241997514,
+   "measured_orders": 94694,
+   "window_s": 1.261229375,
+   "gate_cpu_pct": 98.08770906560909,
+   "gate_peak_rss_mb": 197.71875,
+   "gate_throttled_ms": 0.101,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 153991.53773081405,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 0
+  },
+  {
+   "id": "docker_per_order_closed_1_r1",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1544.07326752473,
+   "measured_orders": 94694,
+   "window_s": 61.327400708,
+   "gate_cpu_pct": 9.580513656489536,
+   "gate_peak_rss_mb": 195.921875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 633.75,
+    "p99": 994.625,
+    "p99.9": 2380.958,
+    "max": 34020.833,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 149189.14758345138,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_per_order_closed_8_r1",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3124.686439956296,
+   "measured_orders": 94694,
+   "window_s": 30.305120792,
+   "gate_cpu_pct": 12.200522233113952,
+   "gate_peak_rss_mb": 196.046875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 2503.0,
+    "p99": 3814.042,
+    "p99.9": 7843.0,
+    "max": 29815.917,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151940.37345583414,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_per_order_closed_32_r1",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3186.6502683264994,
+   "measured_orders": 94694,
+   "window_s": 29.715843292,
+   "gate_cpu_pct": 11.684124074428437,
+   "gate_peak_rss_mb": 196.53515625,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 9767.583,
+    "p99": 16217.709,
+    "p99.9": 33757.625,
+    "max": 47218.5,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 147881.65992008007,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_per_order_pipelined_1_r1",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 2324.189322477153,
+   "measured_orders": 94694,
+   "window_s": 40.742808292,
+   "gate_cpu_pct": 7.091369302020621,
+   "gate_peak_rss_mb": 196.453125,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 123963.28605182566,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_per_order_pipelined_8_r1",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1279.3965866357967,
+   "measured_orders": 94694,
+   "window_s": 74.014579208,
+   "gate_cpu_pct": 5.972698956480974,
+   "gate_peak_rss_mb": 196.7265625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155153.07984647132,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_per_order_pipelined_32_r1",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1727.0296374647103,
+   "measured_orders": 94694,
+   "window_s": 54.83055875,
+   "gate_cpu_pct": 4.909619856828469,
+   "gate_peak_rss_mb": 199.0,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 162436.19650233872,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_batched_closed_1_r1",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1569.773980527353,
+   "measured_orders": 94694,
+   "window_s": 60.323333916,
+   "gate_cpu_pct": 7.756209241543606,
+   "gate_peak_rss_mb": 195.9453125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 560.083,
+    "p99": 1652.209,
+    "p99.9": 2888.959,
+    "max": 96571.125,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155417.83656464354,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_batched_closed_8_r1",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 9121.117135347273,
+   "measured_orders": 94694,
+   "window_s": 10.381842333,
+   "gate_cpu_pct": 24.495979792684068,
+   "gate_peak_rss_mb": 196.0625,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 860.791,
+    "p99": 1413.875,
+    "p99.9": 3567.542,
+    "max": 15593.25,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 147161.80974439258,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_batched_closed_32_r1",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 16180.905325265261,
+   "measured_orders": 94694,
+   "window_s": 5.852206542,
+   "gate_cpu_pct": 32.462883638258305,
+   "gate_peak_rss_mb": 196.22265625,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 1901.417,
+    "p99": 2902.334,
+    "p99.9": 6706.417,
+    "max": 18456.458,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 147706.06018965825,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_batched_pipelined_1_r1",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 51757.92464568156,
+   "measured_orders": 94694,
+   "window_s": 1.829555583,
+   "gate_cpu_pct": 61.799980853601646,
+   "gate_peak_rss_mb": 196.23828125,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 148606.8755574359,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_batched_pipelined_8_r1",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 57880.92277938942,
+   "measured_orders": 94694,
+   "window_s": 1.636014,
+   "gate_cpu_pct": 79.00751460562074,
+   "gate_peak_rss_mb": 196.8515625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151031.32677940634,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_batched_pipelined_32_r1",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 63503.18360288919,
+   "measured_orders": 94694,
+   "window_s": 1.491169334,
+   "gate_cpu_pct": 81.12157166987447,
+   "gate_peak_rss_mb": 197.96875,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 149853.66781821413,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_none_closed_1_r1",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3605.157699022966,
+   "measured_orders": 94694,
+   "window_s": 26.266257375,
+   "gate_cpu_pct": 13.783185584124356,
+   "gate_peak_rss_mb": 195.99609375,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 266.833,
+    "p99": 380.916,
+    "p99.9": 618.292,
+    "max": 15001.792,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158062.05401095675,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_none_closed_8_r1",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 17252.005175261227,
+   "measured_orders": 94694,
+   "window_s": 5.488869209,
+   "gate_cpu_pct": 48.94647508807128,
+   "gate_peak_rss_mb": 196.05078125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 446.042,
+    "p99": 732.667,
+    "p99.9": 1455.416,
+    "max": 15842.541,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 148683.38078426238,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_none_closed_32_r1",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 28466.193110588578,
+   "measured_orders": 94694,
+   "window_s": 3.326542458,
+   "gate_cpu_pct": 78.64529111024503,
+   "gate_peak_rss_mb": 196.2265625,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 1083.542,
+    "p99": 1889.875,
+    "p99.9": 6082.5,
+    "max": 17387.75,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 147336.39728526757,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_none_pipelined_1_r1",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 58064.17889357311,
+   "measured_orders": 94694,
+   "window_s": 1.630850583,
+   "gate_cpu_pct": 88.24297057016167,
+   "gate_peak_rss_mb": 196.34765625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 150812.4739248045,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_none_pipelined_8_r1",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 62028.75031070299,
+   "measured_orders": 94694,
+   "window_s": 1.526614667,
+   "gate_cpu_pct": 91.94998779610178,
+   "gate_peak_rss_mb": 196.8515625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 150431.39949450537,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_none_pipelined_32_r1",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 73466.16805378417,
+   "measured_orders": 94694,
+   "window_s": 1.288947042,
+   "gate_cpu_pct": 100.39908218354871,
+   "gate_peak_rss_mb": 198.0390625,
+   "gate_throttled_ms": 0.64,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151503.2435901421,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 1
+  },
+  {
+   "id": "docker_per_order_closed_1_r2",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1719.1358206787477,
+   "measured_orders": 94694,
+   "window_s": 55.082326167,
+   "gate_cpu_pct": 8.28064520400123,
+   "gate_peak_rss_mb": 196.1015625,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 562.875,
+    "p99": 815.292,
+    "p99.9": 1362.25,
+    "max": 16415.625,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158048.2725042956,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_per_order_closed_8_r2",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3576.3170832202327,
+   "measured_orders": 94694,
+   "window_s": 26.47807725,
+   "gate_cpu_pct": 12.8879146615527,
+   "gate_peak_rss_mb": 196.10546875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 2338.875,
+    "p99": 2840.625,
+    "p99.9": 4819.375,
+    "max": 22648.125,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158840.759046348,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_per_order_closed_32_r2",
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3793.5946940099357,
+   "measured_orders": 94694,
+   "window_s": 24.961549042,
+   "gate_cpu_pct": 12.746308310620268,
+   "gate_peak_rss_mb": 196.203125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 9240.625,
+    "p99": 10852.875,
+    "p99.9": 22002.167,
+    "max": 25943.125,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 149167.57037390882,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_per_order_pipelined_1_r2",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3866.1425279040277,
+   "measured_orders": 94694,
+   "window_s": 24.493147709,
+   "gate_cpu_pct": 9.913172569109259,
+   "gate_peak_rss_mb": 196.125,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 158129.22575417807,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_per_order_pipelined_8_r2",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 2255.677546703494,
+   "measured_orders": 94694,
+   "window_s": 41.980291083,
+   "gate_cpu_pct": 5.983948503437776,
+   "gate_peak_rss_mb": 197.12890625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 160874.3950655301,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_per_order_pipelined_32_r2",
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 2408.847065369832,
+   "measured_orders": 94694,
+   "window_s": 39.310922375,
+   "gate_cpu_pct": 6.341339376929337,
+   "gate_peak_rss_mb": 198.12890625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 163054.84345076443,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_batched_closed_1_r2",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 1497.2996458464315,
+   "measured_orders": 94694,
+   "window_s": 63.243186,
+   "gate_cpu_pct": 7.323416628630947,
+   "gate_peak_rss_mb": 197.11328125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 556.416,
+    "p99": 1672.625,
+    "p99.9": 3020.083,
+    "max": 61192.833,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 161475.21587095625,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_batched_closed_8_r2",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 8899.866608674456,
+   "measured_orders": 94694,
+   "window_s": 10.63993475,
+   "gate_cpu_pct": 23.06001923555029,
+   "gate_peak_rss_mb": 196.05859375,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 864.625,
+    "p99": 1463.5,
+    "p99.9": 3321.083,
+    "max": 15603.5,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 150678.83648663532,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_batched_closed_32_r2",
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 16286.671842498765,
+   "measured_orders": 94694,
+   "window_s": 5.814202,
+   "gate_cpu_pct": 32.34297673180257,
+   "gate_peak_rss_mb": 196.20703125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 1889.5,
+    "p99": 2807.792,
+    "p99.9": 6669.292,
+    "max": 18861.375,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 148347.9876119243,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_batched_pipelined_1_r2",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 50290.89819785827,
+   "measured_orders": 94694,
+   "window_s": 1.882925209,
+   "gate_cpu_pct": 61.01633747896781,
+   "gate_peak_rss_mb": 196.25,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 145431.8580843147,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_batched_pipelined_8_r2",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 59466.04960934748,
+   "measured_orders": 94694,
+   "window_s": 1.592404416,
+   "gate_cpu_pct": 79.6007589067123,
+   "gate_peak_rss_mb": 196.82421875,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 154946.17226455797,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_batched_pipelined_32_r2",
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 63386.66735613239,
+   "measured_orders": 94694,
+   "window_s": 1.493910375,
+   "gate_cpu_pct": 81.0634305956942,
+   "gate_peak_rss_mb": 197.5390625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 153115.5863821882,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_none_closed_1_r2",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 3257.114835606925,
+   "measured_orders": 94694,
+   "window_s": 29.072969416,
+   "gate_cpu_pct": 12.291035528119926,
+   "gate_peak_rss_mb": 195.98828125,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 320.167,
+    "p99": 403.25,
+    "p99.9": 598.833,
+    "max": 14760.458,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 157703.96700257555,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_none_closed_8_r2",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 17714.478573122207,
+   "measured_orders": 94694,
+   "window_s": 5.345570834,
+   "gate_cpu_pct": 48.58910452518381,
+   "gate_peak_rss_mb": 196.046875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 435.5,
+    "p99": 712.0,
+    "p99.9": 1340.083,
+    "max": 16032.292,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151725.3159050312,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_none_closed_32_r2",
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 28634.468854160405,
+   "measured_orders": 94694,
+   "window_s": 3.306993417,
+   "gate_cpu_pct": 79.12988234412322,
+   "gate_peak_rss_mb": 196.1875,
+   "gate_throttled_ms": 0.0,
+   "lat_us": {
+    "p50": 1082.125,
+    "p99": 1811.25,
+    "p99.9": 5810.125,
+    "max": 17253.625,
+    "samples": 94694
+   },
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 144810.70819865176,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_none_pipelined_1_r2",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 59294.661888013936,
+   "measured_orders": 94694,
+   "window_s": 1.597007167,
+   "gate_cpu_pct": 88.58826868370592,
+   "gate_peak_rss_mb": 196.34765625,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 151194.3695230819,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_none_pipelined_8_r2",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 78321.97561712188,
+   "measured_orders": 94694,
+   "window_s": 1.209034875,
+   "gate_cpu_pct": 100.45177563633143,
+   "gate_peak_rss_mb": 196.85546875,
+   "gate_throttled_ms": 0.0,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 146014.5421253802,
+   "accepted": 83840,
+   "rejects": {
+    "MAX_POSITION": 8079,
+    "PRICE_BAND": 7781,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  },
+  {
+   "id": "docker_none_pipelined_32_r2",
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "n": 100000,
+   "valid": true,
+   "errors": [],
+   "orders_per_sec": 78399.67322336638,
+   "measured_orders": 94694,
+   "window_s": 1.207836667,
+   "gate_cpu_pct": 99.22616465823852,
+   "gate_peak_rss_mb": 197.9453125,
+   "gate_throttled_ms": 2.986,
+   "log_bytes_per_event": 353.10843,
+   "replay_events_per_sec": 155423.55346921078,
+   "accepted": 83840,
+   "rejects": {
+    "PRICE_BAND": 7781,
+    "MAX_POSITION": 8079,
+    "LOSS_STREAK_COOLDOWN": 300
+   },
+   "rep": 2
+  }
+ ],
+ "summary": [
+  {
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 1572.9410149196915,
+    "min": 1544.07326752473,
+    "max": 1719.1358206787477
+   },
+   "gate_cpu_pct": {
+    "median": 8.28064520400123,
+    "min": 8.044571562357502,
+    "max": 9.580513656489536
+   },
+   "gate_peak_rss_mb": {
+    "median": 195.94921875,
+    "min": 195.921875,
+    "max": 196.1015625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 155825.67937029127,
+    "min": 149189.14758345138,
+    "max": 158048.2725042956
+   },
+   "lat_p50": {
+    "median": 633.75,
+    "min": 562.875,
+    "max": 635.208
+   },
+   "lat_p99": {
+    "median": 893.834,
+    "min": 815.292,
+    "max": 994.625
+   },
+   "lat_p99.9": {
+    "median": 1833.208,
+    "min": 1362.25,
+    "max": 2380.958
+   },
+   "lat_max": {
+    "median": 23939.25,
+    "min": 16415.625,
+    "max": 34020.833
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 3124.686439956296,
+    "min": 3035.1729926054913,
+    "max": 3576.3170832202327
+   },
+   "gate_cpu_pct": {
+    "median": 12.534158009509206,
+    "min": 12.200522233113952,
+    "max": 12.8879146615527
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.046875,
+    "min": 196.04296875,
+    "max": 196.10546875
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 151940.37345583414,
+    "min": 146475.3276454498,
+    "max": 158840.759046348
+   },
+   "lat_p50": {
+    "median": 2503.0,
+    "min": 2338.875,
+    "max": 2540.0
+   },
+   "lat_p99": {
+    "median": 3814.042,
+    "min": 2840.625,
+    "max": 4617.25
+   },
+   "lat_p99.9": {
+    "median": 7843.0,
+    "min": 4819.375,
+    "max": 12514.458
+   },
+   "lat_max": {
+    "median": 29815.917,
+    "min": 22648.125,
+    "max": 41794.666
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "closed",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 3186.6502683264994,
+    "min": 3174.1988391257883,
+    "max": 3793.5946940099357
+   },
+   "gate_cpu_pct": {
+    "median": 11.684124074428437,
+    "min": 11.681698004976356,
+    "max": 12.746308310620268
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.2109375,
+    "min": 196.203125,
+    "max": 196.53515625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 149167.57037390882,
+    "min": 147881.65992008007,
+    "max": 151978.03192836794
+   },
+   "lat_p50": {
+    "median": 9767.583,
+    "min": 9240.625,
+    "max": 9849.958
+   },
+   "lat_p99": {
+    "median": 13853.0,
+    "min": 10852.875,
+    "max": 16217.709
+   },
+   "lat_p99.9": {
+    "median": 31567.625,
+    "min": 22002.167,
+    "max": 33757.625
+   },
+   "lat_max": {
+    "median": 39272.542,
+    "min": 25943.125,
+    "max": 47218.5
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 2332.2828303139063,
+    "min": 2324.189322477153,
+    "max": 3866.1425279040277
+   },
+   "gate_cpu_pct": {
+    "median": 7.091369302020621,
+    "min": 6.747714361163789,
+    "max": 9.913172569109259
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.125,
+    "min": 196.10546875,
+    "max": 196.453125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 145873.45880601878,
+    "min": 123963.28605182566,
+    "max": 158129.22575417807
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 1321.022599688855,
+    "min": 1279.3965866357967,
+    "max": 2255.677546703494
+   },
+   "gate_cpu_pct": {
+    "median": 5.972698956480974,
+    "min": 4.369132909052027,
+    "max": 5.983948503437776
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.7265625,
+    "min": 196.5234375,
+    "max": 197.12890625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 155153.07984647132,
+    "min": 152925.24975548344,
+    "max": 160874.3950655301
+   }
+  },
+  {
+   "fsync": "per_order",
+   "mode": "pipelined",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 1727.0296374647103,
+    "min": 1238.3589296078362,
+    "max": 2408.847065369832
+   },
+   "gate_cpu_pct": {
+    "median": 4.909619856828469,
+    "min": 4.001095670540893,
+    "max": 6.341339376929337
+   },
+   "gate_peak_rss_mb": {
+    "median": 198.48046875,
+    "min": 198.12890625,
+    "max": 199.0
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 162436.19650233872,
+    "min": 155313.5182123837,
+    "max": 163054.84345076443
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 1497.2996458464315,
+    "min": 1117.3364535299875,
+    "max": 1569.773980527353
+   },
+   "gate_cpu_pct": {
+    "median": 7.323416628630947,
+    "min": 6.104507902484622,
+    "max": 7.756209241543606
+   },
+   "gate_peak_rss_mb": {
+    "median": 195.9453125,
+    "min": 195.75,
+    "max": 197.11328125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 155417.83656464354,
+    "min": 146863.38378555444,
+    "max": 161475.21587095625
+   },
+   "lat_p50": {
+    "median": 560.083,
+    "min": 556.416,
+    "max": 726.583
+   },
+   "lat_p99": {
+    "median": 1672.625,
+    "min": 1652.209,
+    "max": 2730.083
+   },
+   "lat_p99.9": {
+    "median": 3020.083,
+    "min": 2888.959,
+    "max": 4326.209
+   },
+   "lat_max": {
+    "median": 96571.125,
+    "min": 61192.833,
+    "max": 118376.791
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 8899.866608674456,
+    "min": 7804.25758725208,
+    "max": 9121.117135347273
+   },
+   "gate_cpu_pct": {
+    "median": 23.06001923555029,
+    "min": 21.638835853554134,
+    "max": 24.495979792684068
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.05859375,
+    "min": 196.05078125,
+    "max": 196.0625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 150678.83648663532,
+    "min": 147161.80974439258,
+    "max": 158319.44968071498
+   },
+   "lat_p50": {
+    "median": 864.625,
+    "min": 860.791,
+    "max": 971.375
+   },
+   "lat_p99": {
+    "median": 1463.5,
+    "min": 1413.875,
+    "max": 1608.833
+   },
+   "lat_p99.9": {
+    "median": 3444.917,
+    "min": 3321.083,
+    "max": 3567.542
+   },
+   "lat_max": {
+    "median": 15603.5,
+    "min": 15593.25,
+    "max": 17752.334
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "closed",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 16180.905325265261,
+    "min": 15599.951911345148,
+    "max": 16286.671842498765
+   },
+   "gate_cpu_pct": {
+    "median": 32.462883638258305,
+    "min": 32.34297673180257,
+    "max": 32.61484486405883
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.20703125,
+    "min": 196.20703125,
+    "max": 196.22265625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 148347.9876119243,
+    "min": 147706.06018965825,
+    "max": 155471.36781023143
+   },
+   "lat_p50": {
+    "median": 1901.417,
+    "min": 1889.5,
+    "max": 1943.625
+   },
+   "lat_p99": {
+    "median": 2902.334,
+    "min": 2807.792,
+    "max": 3067.5
+   },
+   "lat_p99.9": {
+    "median": 6706.417,
+    "min": 6669.292,
+    "max": 11726.25
+   },
+   "lat_max": {
+    "median": 18456.458,
+    "min": 18219.208,
+    "max": 18861.375
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 50290.89819785827,
+    "min": 48360.4681826085,
+    "max": 51757.92464568156
+   },
+   "gate_cpu_pct": {
+    "median": 61.01633747896781,
+    "min": 59.46763601172033,
+    "max": 61.799980853601646
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.25,
+    "min": 196.23828125,
+    "max": 196.28515625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 148606.8755574359,
+    "min": 145431.8580843147,
+    "max": 160691.64899615388
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 59466.04960934748,
+    "min": 57880.92277938942,
+    "max": 64652.80301847192
+   },
+   "gate_cpu_pct": {
+    "median": 79.00751460562074,
+    "min": 77.1332915188675,
+    "max": 79.6007589067123
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.82421875,
+    "min": 196.765625,
+    "max": 196.8515625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 154946.17226455797,
+    "min": 151031.32677940634,
+    "max": 163004.01188917304
+   }
+  },
+  {
+   "fsync": "batched",
+   "mode": "pipelined",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 63503.18360288919,
+    "min": 63386.66735613239,
+    "max": 65346.16756520649
+   },
+   "gate_cpu_pct": {
+    "median": 81.12157166987447,
+    "min": 81.0634305956942,
+    "max": 81.51377856521655
+   },
+   "gate_peak_rss_mb": {
+    "median": 197.96875,
+    "min": 197.5390625,
+    "max": 198.01171875
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 153115.5863821882,
+    "min": 149853.66781821413,
+    "max": 160367.60540151718
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 3257.114835606925,
+    "min": 3256.0825600322332,
+    "max": 3605.157699022966
+   },
+   "gate_cpu_pct": {
+    "median": 12.924588770955749,
+    "min": 12.291035528119926,
+    "max": 13.783185584124356
+   },
+   "gate_peak_rss_mb": {
+    "median": 195.99609375,
+    "min": 195.98828125,
+    "max": 195.99609375
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 157703.96700257555,
+    "min": 151983.09433618296,
+    "max": 158062.05401095675
+   },
+   "lat_p50": {
+    "median": 313.167,
+    "min": 266.833,
+    "max": 320.167
+   },
+   "lat_p99": {
+    "median": 403.25,
+    "min": 380.916,
+    "max": 422.583
+   },
+   "lat_p99.9": {
+    "median": 618.292,
+    "min": 598.833,
+    "max": 1217.125
+   },
+   "lat_max": {
+    "median": 15001.792,
+    "min": 14760.458,
+    "max": 27435.125
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 17714.478573122207,
+    "min": 17252.005175261227,
+    "max": 17720.373685916882
+   },
+   "gate_cpu_pct": {
+    "median": 48.84544076140681,
+    "min": 48.58910452518381,
+    "max": 48.94647508807128
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.046875,
+    "min": 196.046875,
+    "max": 196.05078125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 148683.38078426238,
+    "min": 141419.27910522267,
+    "max": 151725.3159050312
+   },
+   "lat_p50": {
+    "median": 435.625,
+    "min": 435.5,
+    "max": 446.042
+   },
+   "lat_p99": {
+    "median": 712.0,
+    "min": 707.417,
+    "max": 732.667
+   },
+   "lat_p99.9": {
+    "median": 1455.416,
+    "min": 1340.083,
+    "max": 1554.125
+   },
+   "lat_max": {
+    "median": 16032.292,
+    "min": 15842.541,
+    "max": 16034.25
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "closed",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 28466.193110588578,
+    "min": 25639.53355514549,
+    "max": 28634.468854160405
+   },
+   "gate_cpu_pct": {
+    "median": 79.12988234412322,
+    "min": 78.64529111024503,
+    "max": 79.31197398272535
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.203125,
+    "min": 196.1875,
+    "max": 196.2265625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 147148.98842293423,
+    "min": 144810.70819865176,
+    "max": 147336.39728526757
+   },
+   "lat_p50": {
+    "median": 1083.542,
+    "min": 1082.125,
+    "max": 1162.167
+   },
+   "lat_p99": {
+    "median": 1889.875,
+    "min": 1811.25,
+    "max": 2790.166
+   },
+   "lat_p99.9": {
+    "median": 6082.5,
+    "min": 5810.125,
+    "max": 16667.166
+   },
+   "lat_max": {
+    "median": 17387.75,
+    "min": 17253.625,
+    "max": 21868.75
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 1,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 58494.518556647214,
+    "min": 58064.17889357311,
+    "max": 59294.661888013936
+   },
+   "gate_cpu_pct": {
+    "median": 88.25893426447665,
+    "min": 88.24297057016167,
+    "max": 88.58826868370592
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.34765625,
+    "min": 196.34765625,
+    "max": 196.36328125
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 150812.4739248045,
+    "min": 141404.75622353255,
+    "max": 151194.3695230819
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 8,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 76102.12419654342,
+    "min": 62028.75031070299,
+    "max": 78321.97561712188
+   },
+   "gate_cpu_pct": {
+    "median": 100.45177563633143,
+    "min": 91.94998779610178,
+    "max": 100.57151197242588
+   },
+   "gate_peak_rss_mb": {
+    "median": 196.8515625,
+    "min": 196.8203125,
+    "max": 196.85546875
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 148465.08437205353,
+    "min": 146014.5421253802,
+    "max": 150431.39949450537
+   }
+  },
+  {
+   "fsync": "none",
+   "mode": "pipelined",
+   "conns": 32,
+   "valid_reps": 3,
+   "total_reps": 3,
+   "orders_per_sec": {
+    "median": 75080.71241997514,
+    "min": 73466.16805378417,
+    "max": 78399.67322336638
+   },
+   "gate_cpu_pct": {
+    "median": 99.22616465823852,
+    "min": 98.08770906560909,
+    "max": 100.39908218354871
+   },
+   "gate_peak_rss_mb": {
+    "median": 197.9453125,
+    "min": 197.71875,
+    "max": 198.0390625
+   },
+   "log_bytes_per_event": {
+    "median": 353.10843,
+    "min": 353.10843,
+    "max": 353.10843
+   },
+   "replay_events_per_sec": {
+    "median": 153991.53773081405,
+    "min": 151503.2435901421,
+    "max": 155423.55346921078
+   }
+  }
+ ],
+ "profiles": [],
+ "recovery": [
+  {
+   "events": 10000,
+   "log_mb": 3.365396499633789,
+   "baseline_empty_log_s": 0.19377312500000698,
+   "valid": true,
+   "outcome": "OK",
+   "startup_s": [
+    0.24387966700305697,
+    0.25047583299601683,
+    0.243210958004056
+   ],
+   "recovery_s_median": 0.05010654200304998,
+   "peak_rss_mb": 54.34765625,
+   "auditor_replay_events_per_sec": 148037.668194893
+  },
+  {
+   "events": 100000,
+   "log_mb": 33.67504405975342,
+   "baseline_empty_log_s": 0.19377312500000698,
+   "valid": true,
+   "outcome": "OK",
+   "startup_s": [
+    0.7794142920029117,
+    0.7876479159967857,
+    0.7987560410037986
+   ],
+   "recovery_s_median": 0.5938747909967788,
+   "peak_rss_mb": 206.35546875,
+   "auditor_replay_events_per_sec": 157298.83298030912
+  },
+  {
+   "events": 1000000,
+   "log_mb": 337.65437507629395,
+   "baseline_empty_log_s": 0.19377312500000698,
+   "valid": true,
+   "outcome": "OOM_KILLED",
+   "startup_s": [],
+   "note": "gate did not finish replaying the log inside the limits"
+  }
+ ],
+ "command": "python -m bench.run --backend docker --orders 100000 --reps 3 --label docker"
+}
