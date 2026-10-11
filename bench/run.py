@@ -16,6 +16,7 @@ import psutil
 
 from auditor.replay import audit
 from bench import env, workload
+from bench.profile import analyze
 from core.rules import load_rules
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -149,6 +150,7 @@ def run_once(cfg, n, rules, wl, expected, rid, profile=None):
                rejects=dict(a.rejects))
     if profile:
         rec["profile_file"] = os.path.join(outdir, "gate.prof")
+        rec["profile"] = analyze(rec["profile_file"])
     if rec["valid"] and not profile:
         for f in os.listdir(outdir):
             if f.endswith(".log"):

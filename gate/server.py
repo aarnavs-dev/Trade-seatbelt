@@ -14,11 +14,28 @@ def _handler(gate: Gate):
         pending: asyncio.Queue = asyncio.Queue()
 
         async def respond():
-            while (fut := await pending.get()) is not None:
+            """Write every already-completed response in one socket call (order preserved)."""
+            chunks = []
+
+            async def result(fut):
                 try:
-                    writer.write(await fut)
+                    return await fut
                 except GateClosed as e:
-                    writer.write(orjson.dumps({"error": str(e)}) + b"\n")
+                    return orjson.dumps({"error": str(e)}) + b"\n"
+
+            while (fut := await pending.get()) is not None:
+                chunks.append(await result(fut))
+                while not pending.empty() and len(chunks) < 512:
+                    nxt = pending.get_nowait()
+                    if nxt is None:
+                        pending.put_nowait(None)  # leave the end marker for the outer loop
+                        break
+                    if not nxt.done():  # flush what is ready first, then wait for this one
+                        writer.write(b"".join(chunks))
+                        chunks = []
+                    chunks.append(await result(nxt))
+                writer.write(b"".join(chunks))
+                chunks = []
                 await writer.drain()
 
         task = asyncio.create_task(respond())
