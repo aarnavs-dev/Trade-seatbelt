@@ -136,3 +136,13 @@ The cProfile shares (native, pipelined, 8 connections, 100k orders; indicative, 
    idempotency) in memory and replays the whole log at startup: natively about 211 MB peak RSS at 100k events and about
    1,749 MB at 1M (6.2 s recovery); in the 512 MB container the 1M-event recovery was **OOM-killed**. Fixing this means keeping only
    `client_order_id -> seq` (or a bounded recent window) and checkpointing state instead of replaying everything.
+
+## Copy-trading layer
+
+- Replay only; no live data. yfinance serves 1m bars for about 7 days and 5m-30m for about 60 days (approximate, unofficial).
+- The holiday/early-close table is hand-entered for 2024-2027 (outside it the calendar raises). Check it against the exchange's list.
+- Strategies are illustrative, long-only, fixed-qty, and are not tuned or claimed to make money. Bars are IEX or Yahoo, not consolidated tape.
+- The "tx index" in the chain ordering is 0 because `getTransaction` does not report it; ties within a slot fall to signature.
+- Chain reading takes one page (up to 1000) of signatures per signer. Devnet memos are public; the local feed is not signature-verified.
+- The devnet guard is a hostname check plus the cluster's genesis hash; it was not tested against a real mainnet node (tests use fakes).
+- Publisher sends without confirming finality; a lost transaction is visible only as a gap in `leader_seq` on chain.

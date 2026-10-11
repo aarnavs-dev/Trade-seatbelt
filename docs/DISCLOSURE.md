@@ -183,3 +183,14 @@ No external API or service is called. The following are described in the project
 ## Data
 
 All orders and logs are generated (seeded). No real market data, no personal financial data, no broker credentials.
+
+## Copy-trading layer (`marketdata/`, `leaders/`)
+
+| Item | Use | Notes |
+|---|---|---|
+| Alpaca Market Data (historical bars, IEX feed) | replay data if `ALPACA_KEY_ID`/`ALPACA_SECRET_KEY` are set | data endpoint only; no order code exists |
+| yfinance (unofficial Yahoo wrapper) | replay data without keys | may break or rate-limit; limited intraday history |
+| Solana **devnet** (public RPC, faucet, Memo program) | optional signal publishing | throwaway keypair, no value; writes refuse non-devnet URLs |
+| `cryptography` (Ed25519) | signs devnet transactions | BSD/Apache-2.0 |
+
+Live Alpaca, xStocks and Pyth are disabled stubs that make no network calls. Signals are paper only.

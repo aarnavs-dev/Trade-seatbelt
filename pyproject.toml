@@ -8,6 +8,7 @@ dependencies = ["orjson>=3.10", "pydantic>=2.7", "pyyaml>=6", "uvloop>=0.19"]
 [project.optional-dependencies]
 api = ["fastapi>=0.115", "uvicorn>=0.30"]
 sim = ["yfinance>=0.2.40", "httpx>=0.27"]   # market-data providers; the offline provider needs neither
+leaders = ["cryptography>=42", "httpx>=0.27", "yfinance>=0.2.40"]   # signing + market data for leaders/
 dev = ["pytest>=8", "hypothesis>=6.100", "psutil>=5.9", "httpx>=0.27"]
 
 [build-system]
@@ -15,7 +16,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["core", "gate", "auditor", "client", "api", "sim"]
+packages = ["core", "gate", "auditor", "client", "api", "sim", "marketdata", "leaders"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

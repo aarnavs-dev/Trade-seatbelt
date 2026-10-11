@@ -1,12 +1,12 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: setup sim demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
+.PHONY: leaders-setup setup sim demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
 
 setup:
 	$(PYTHON312) -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
-	$(PY) -m pip install --quiet -e ".[dev,api,sim]"
+	$(PY) -m pip install --quiet -e ".[dev,api,sim,leaders]"
 
 demo:
 	bash scripts/demo.sh
@@ -15,6 +15,10 @@ demo:
 #   make sim SIM_ORDERS=500 SIM_PROFILE=tilt SIM_SEED=42 SIM_PROVIDER=yfinance
 sim:
 	$(PY) -m sim --provider $(or $(SIM_PROVIDER),offline) --profile $(or $(SIM_PROFILE),disciplined) --orders $(or $(SIM_ORDERS),300) --speed $(or $(SIM_SPEED),50) $(if $(SIM_SEED),--seed $(SIM_SEED))
+
+# Throwaway devnet keypair + airdrop for the leaders' signal publisher (devnet only; refuses any other RPC)
+leaders-setup:
+	$(PY) -m leaders setup
 
 demo-recon:
 	bash scripts/demo_recon.sh

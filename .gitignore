@@ -14,3 +14,7 @@ bench/data/
 bench/runs/
 bench/results/PERFORMANCE_latest.md
 runs/
+
+# leaders: throwaway devnet keypair + marketdata cache
+.keys/
+marketdata/cache/
