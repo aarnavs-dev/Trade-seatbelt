@@ -99,11 +99,11 @@ function World({ host, variant }: { host: React.RefObject<HTMLDivElement | null>
   // wheel scrubs back through the chain
   useEffect(() => {
     const el = host.current?.parentElement
-    if (!el) return
+    if (!el || variant === 'hero') return // the landing page must scroll
     const onWheel = (e: WheelEvent) => store.scrub(-Math.sign(e.deltaY) * Math.max(1, Math.round(Math.abs(e.deltaY) / 40)))
     el.addEventListener('wheel', onWheel, { passive: true })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [host])
+  }, [host, variant])
 
   // order particles
   const tmpM = useRef(new THREE.Matrix4()).current
@@ -329,9 +329,11 @@ function World({ host, variant }: { host: React.RefObject<HTMLDivElement | null>
     const cam = camera as THREE.PerspectiveCamera
     const aspect = size.width / size.height
     const wide = Math.min(1.25, Math.max(0.8, 1.6 / aspect))
-    tmpV.set((hero ? 0.2 : -4.5) + px * 0.35, (hero ? 3.0 : 2.7) + py * 0.2, (hero ? 14 : 16) * wide)
+    // the landing headline owns the left: shift position and target together so the view direction is unchanged
+    const sh = hero ? 1.75 * aspect : 0
+    tmpV.set(-4.5 + px * 0.35 - 0.96 * sh, 2.7 + py * 0.2, 16 * wide - 0.28 * sh)
     cam.position.lerp(tmpV, 1 - Math.exp(-dt * 3))
-    cam.lookAt(hero ? 4.2 : 0.9, hero ? -0.5 : -0.2, hero ? -2 : -2.2)
+    cam.lookAt(0.9 - 0.96 * sh, -0.2, -2.2 - 0.28 * sh)
 
     // ---- DOM labels (pool, no React renders)
     const L = labels.current
@@ -481,7 +483,7 @@ export default function Scene({ variant = 'full' }: { variant?: 'full' | 'hero' 
     return () => document.removeEventListener('visibilitychange', on)
   }, [])
   return (
-    <div className="absolute inset-0" data-testid="scene">
+    <div className={`absolute inset-0 ${variant === 'hero' ? 'pointer-events-none' : ''}`} data-testid="scene">
       <Canvas
         dpr={dpr}
         frameloop={hidden ? 'never' : 'always'}

@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
 from api import bench as bench_mod
+from api import invariants as inv_mod
 from api import tail
 from api.demo import DemoRunner
 from api.sources import Sources
@@ -42,6 +43,8 @@ class Settings:
     recon_csv: Path = ROOT / "fixtures" / "recon" / "broker_fills.csv"
     cf_csv: Path = ROOT / "fixtures" / "recon" / "cf_trades.csv"
     default_demo_log: Path = ROOT / "out" / "demo" / "gate.log"
+    invariants_md: Path = ROOT / "docs" / "INVARIANTS.md"
+    junit: Path = ROOT / "out" / "pytest-junit.xml"
     sse_poll: float = 0.1
     extra: dict = field(default_factory=dict)
 
@@ -180,5 +183,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/bench")
     def bench():
         return bench_mod.load(s.bench_dir)
+
+    @app.get("/invariants")
+    def invariants():
+        return inv_mod.build(s.invariants_md, s.junit, s.root)
 
     return app

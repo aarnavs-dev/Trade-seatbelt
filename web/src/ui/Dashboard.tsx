@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion'
 import { forced2D, hasWebGL, usePhone, useReducedMotion } from '../lib/env'
 import { store, useSnap } from '../lib/store'
@@ -7,36 +7,10 @@ import Chain2D from './Chain2D'
 import { BenchDrawer, CfDrawer, Drawer, ReconDrawer } from './Drawers'
 import { Palette, type Command } from './Palette'
 import { BenchSummary, CfSummary, PnlPanel, ReconSummary, Verdict, type DrawerName } from './Panels'
+import { Mark, SceneBoundary, SimulatedLabel, StageLoading } from './shared'
 import { Tip } from './Tip'
 
 const Scene = lazy(() => import('../scene/Scene'))
-
-class SceneBoundary extends Component<{ children: ReactNode; fallback: (e: Error) => ReactNode }, { err: Error | null }> {
-  state = { err: null as Error | null }
-  static getDerivedStateFromError(err: Error) { return { err } }
-  render() { return this.state.err ? this.props.fallback(this.state.err) : this.props.children }
-}
-
-export function SimulatedLabel() {
-  return (
-    <span className="num inline-flex items-center gap-2 rounded-full border border-line px-2.5 py-1 text-[11px] tracking-wide text-ink-2" data-testid="sim-label">
-      <i className="inline-block h-1.5 w-1.5 rounded-full bg-ink-3" />SIMULATED, no real orders
-    </span>
-  )
-}
-
-export function Mark() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
-      <circle cx="11" cy="11" r="8.5" fill="none" stroke="var(--color-accept)" strokeWidth="1.4" />
-      <circle cx="11" cy="11" r="4.2" fill="none" stroke="var(--color-ink-3)" strokeWidth="1" />
-    </svg>
-  )
-}
-
-function StageLoading({ text }: { text: string }) {
-  return <div className="absolute inset-0 grid place-items-center text-[13px] text-ink-3" role="status"><span className="flex items-center gap-3"><i className="live-dot inline-block h-2 w-2 rounded-full bg-accept" />{text}</span></div>
-}
 
 function Stage({ phone }: { phone: boolean }) {
   const reduced = useReducedMotion()
@@ -61,7 +35,10 @@ function Stage({ phone }: { phone: boolean }) {
 export default function Dashboard() {
   const s = useSnap()
   const phone = usePhone()
-  const [drawer, setDrawer] = useState<DrawerName>(null)
+  const [drawer, setDrawer] = useState<DrawerName>(() => {
+    const o = new URLSearchParams(location.search).get('open')
+    return o === 'recon' || o === 'cf' || o === 'bench' ? o : null
+  })
   const [palette, setPalette] = useState(false)
 
   useEffect(() => { store.connect('demo') }, [])
@@ -144,7 +121,7 @@ export default function Dashboard() {
         {phone ? (
           <div className="h-dvh overflow-y-auto pb-24" data-testid="dashboard-phone">
             <header className="sticky top-0 z-20 border-b border-line bg-bg/85 px-4 pb-3 pt-3 backdrop-blur">
-              <div className="mb-2 flex items-center justify-between"><span className="flex items-center gap-2 text-[15px] font-medium"><Mark />Trade Seatbelt</span></div>
+              <div className="mb-2 flex items-center justify-between"><a href="/" className="flex items-center gap-2 text-[15px] font-medium" aria-label="Trade Seatbelt, home"><Mark />Trade Seatbelt</a></div>
               <SimulatedLabel />
               <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">{tools}</div>
             </header>
@@ -168,7 +145,7 @@ export default function Dashboard() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgb(7_8_10/0.55)_100%)]" />
             {emptyHint}
             <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 py-4">
-              <div className="pointer-events-auto flex items-center gap-4"><span className="flex items-center gap-2.5 text-[15px] font-medium tracking-tight"><Mark />Trade Seatbelt</span><SimulatedLabel /></div>
+              <div className="pointer-events-auto flex items-center gap-4"><a href="/" className="flex items-center gap-2.5 text-[15px] font-medium tracking-tight" aria-label="Trade Seatbelt, home"><Mark />Trade Seatbelt</a><SimulatedLabel /></div>
               <div className="pointer-events-auto flex items-center gap-2">{tools}</div>
             </header>
             <aside className="scroll-thin pointer-events-none absolute bottom-12 left-5 top-[72px] z-10 flex w-[292px] flex-col gap-3 overflow-y-auto pr-1">

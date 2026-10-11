@@ -177,3 +177,20 @@ export interface DemoStatus {
   total: number
   error: string | null
 }
+
+export interface Invariants {
+  source: string
+  result_file_found: boolean
+  generated: string | null
+  suite: { tests: number; failures: number; errors: number; skipped: number } | null
+  note: string | null
+  invariants: {
+    id: string
+    claim: string
+    status: 'passing' | 'failing' | 'partial' | 'unknown' | 'not_pytest'
+    passed: number
+    failed: number
+    skipped: number
+    unmatched: number
+  }[]
+}

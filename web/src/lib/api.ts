@@ -1,4 +1,4 @@
-import type { Bench, CfResult, DemoStatus, ReconResult, Report, Source, TamperResult } from './types'
+import type { Bench, CfResult, DemoStatus, Invariants, ReconResult, Report, Source, TamperResult } from './types'
 
 const BASE = '/api'
 
@@ -40,6 +40,7 @@ export const api = {
   counterfactual: () => call<CfResult>('/counterfactual'),
   counterfactualUpload: (csv: Blob) => call<CfResult>('/counterfactual', { method: 'POST', body: csv, headers: { 'content-type': 'text/csv' } }),
   bench: () => call<Bench>('/bench'),
+  invariants: () => call<Invariants>('/invariants'),
   streamUrl: (source: Source, tail = 400) => `${BASE}/events/stream?source=${source}&tail=${tail}`,
 }
 

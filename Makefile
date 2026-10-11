@@ -15,7 +15,7 @@ demo-recon:
 	bash scripts/demo_recon.sh
 
 test:
-	$(PY) -m pytest -q
+	$(PY) -m pytest -q --junitxml=out/pytest-junit.xml   # the landing page reads test status from this file
 
 # API for the dashboard: 127.0.0.1:8000 only, read-only (see api/app.py)
 api:

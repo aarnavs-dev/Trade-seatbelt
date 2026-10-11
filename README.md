@@ -77,13 +77,16 @@ flowchart LR
 - `client/` sends orders from a fixture file. `fixtures/` generates them with a fixed seed and hand-computed expected totals.
 - `bench/` workload, load generator, harness and report generator. `tests/`. `docs/`.
 
-- `api/` thin FastAPI for the dashboard, bound to 127.0.0.1 only: `GET /report`, `GET /events/stream` (SSE tail of the log), `POST /demo/run` (the demo flow with its own gate process in a temp dir), `POST /tamper` (edits a *copy* of the log, verifies the copy, returns the first bad seq; the real log is only read and no path is taken from the client), `GET|POST /recon` and `GET|POST /counterfactual` (bundled fixtures, or your CSV as the raw request body, 1 MB cap, errors name the row), `GET /bench` (stored numbers from `bench/results/*.json`, nothing computed).
+- `api/` thin FastAPI for the dashboard, bound to 127.0.0.1 only: `GET /report`, `GET /events/stream` (SSE tail of the log), `POST /demo/run` (the demo flow with its own gate process in a temp dir), `POST /tamper` (edits a *copy* of the log, verifies the copy, returns the first bad seq; the real log is only read and no path is taken from the client), `GET|POST /recon` and `GET|POST /counterfactual` (bundled fixtures, or your CSV as the raw request body, 1 MB cap, errors name the row), `GET /bench` (stored numbers from `bench/results/*.json`, nothing computed), `GET /invariants` (the list from `docs/INVARIANTS.md`; test status only from the JUnit file `make test` writes to `out/pytest-junit.xml`, otherwise "unknown").
 
 - `web/` Vite + React + TypeScript + Tailwind + react-three-fiber dashboard (details below).
 
 Not built yet: the optional Gemini / ElevenLabs / Tiger Data integrations.
 
-## Dashboard (`web/`)
+## Landing page and dashboard (`web/`)
+
+`/` is the landing page (hero replays a real hash-chained log from the bundled fixture and verifies it in your browser; the Proof section reads
+numbers from `/bench` and invariant test status from `/invariants`, and shows no number when the API is down). `/app` is the dashboard.
 
 ```
 make api     # terminal 1: 127.0.0.1:8000
@@ -102,7 +105,7 @@ capped at 2, the three.js chunk is lazy-loaded, rendering pauses while the tab i
 or a phone-width screen the dashboard shows a 2D SVG chain instead. Permanent label: "SIMULATED, no real orders".
 
 Browser check (Playwright; screenshots to `web/e2e/shots/`, plus overflow and contrast audits): with `make api` and `make web` running,
-`cd web && npx playwright install chromium && node e2e/shots.mjs`.
+`cd web && npx playwright install chromium && node e2e/shots.mjs` (dashboard) and `node e2e/landing.mjs` (landing page: copy audit, every benchmark number traced to the result files, overflow, contrast); `node e2e/perf.mjs` against `npx vite preview` measures load time.
 
 ## Results and docs
 

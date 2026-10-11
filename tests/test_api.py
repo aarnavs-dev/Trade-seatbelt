@@ -319,3 +319,52 @@ def test_bench_with_no_results_is_empty_not_invented(tmp_path):
     with TestClient(create_app(Settings(bench_dir=tmp_path))) as c:
         j = c.get("/bench").json()
     assert j["runs"] == [] and j["fsync_micro"] is None
+
+
+# ---------------------------------------------------------------- /invariants
+JUNIT = """<?xml version="1.0"?><testsuites><testsuite name="pytest" tests="4" failures="1" errors="0" skipped="1">
+<testcase classname="tests.test_a" name="test_one"/><testcase classname="tests.test_a" name="test_two[x]"/>
+<testcase classname="tests.test_a" name="test_two[y]"><failure message="boom"/></testcase>
+<testcase classname="tests.test_b" name="test_skip"><skipped/></testcase></testsuite></testsuites>"""
+MD = """| # | Claim | Tests | Command |
+|---|---|---|---|
+| 1 | First claim. More text. | `tests/test_a.py::test_one` | `x` |
+| 2 | Second claim. | `tests/test_a.py::test_two` | `x` |
+| 3 | Third claim. | `tests/test_a.py::test_one`; `::test_missing` | `x` |
+| 4 | Fourth claim. | enforced by the harness | `x` |
+| 5 | Whole file. | `tests/test_b.py` | `x` |
+"""
+
+
+def inv_client(tmp_path, junit=True):
+    md = tmp_path / "INV.md"
+    md.write_text(MD)
+    j = tmp_path / "junit.xml"
+    if junit:
+        j.write_text(JUNIT)
+    return TestClient(create_app(Settings(invariants_md=md, junit=j, root=tmp_path)))
+
+
+def test_invariants_status_comes_only_from_the_result_file(tmp_path):
+    with inv_client(tmp_path) as c:
+        j = c.get("/invariants").json()
+    st = {r["id"]: r for r in j["invariants"]}
+    assert j["result_file_found"] and j["suite"] == {"tests": 4, "failures": 1, "errors": 0, "skipped": 1}
+    assert st["1"]["status"] == "passing" and st["1"]["claim"] == "First claim."
+    assert st["2"]["status"] == "failing" and (st["2"]["passed"], st["2"]["failed"]) == (1, 1)  # parameterized: any failure fails it
+    assert st["3"]["status"] == "partial" and st["3"]["unmatched"] == 1  # a ref with no result is never counted as passing
+    assert st["4"]["status"] == "not_pytest"
+    assert st["5"]["status"] == "unknown" and st["5"]["skipped"] == 1  # only skipped tests: not "passing"
+
+
+def test_invariants_without_a_result_file_are_unknown_not_passing(tmp_path):
+    with inv_client(tmp_path, junit=False) as c:
+        j = c.get("/invariants").json()
+    assert not j["result_file_found"] and "make test" in j["note"]
+    assert {r["status"] for r in j["invariants"]} <= {"unknown", "not_pytest"}
+
+
+def test_real_invariants_file_parses_every_row(client):
+    j = client.get("/invariants").json()
+    assert [r["id"] for r in j["invariants"]][:3] == ["1", "2", "3"] and len(j["invariants"]) == 12
+    assert all(r["refs"] for r in j["invariants"] if r["id"] != "9")  # only the benchmark-harness row has no pytest ref

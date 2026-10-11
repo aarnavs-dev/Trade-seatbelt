@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
+import { recomputeHash } from './hash'
 import type { DemoStatus, LogEvent, Report, Source, TamperResult } from './types'
 
 /** Visual timing for a live event: it flies in from `spawnAt`, lands on the chain at `spawnAt + TRAVEL_MS`. */
@@ -54,6 +55,8 @@ class Store {
   private reportTimer: number | undefined
   private notifyQueued = false
   private seqIndex = new Map<number, Block>()
+  private reportOn = true
+  private timers: number[] = []
 
   // ------------------------------------------------------------ subscription
   subscribe = (fn: () => void) => {
@@ -82,6 +85,8 @@ class Store {
     this.seqIndex.clear()
     this.lastSpawn = 0
     this.helloTotal = 0
+    this.stopReplay()
+    this.reportOn = true
     this.set({ source, conn: 'connecting', connError: null, total: 0, firstSeq: 1, version: this.snap.version + 1, selected: null, viewSeq: null, hover: null, followLive: true })
     const es = new EventSource(api.streamUrl(source))
     this.es = es
@@ -126,7 +131,7 @@ class Store {
       // a new demo run is a new chain: forget any tamper display
       ...(ev.seq === 1 ? { tamper: null, verify: null } : {}),
     })
-    this.refreshReport(350)
+    if (this.reportOn) this.refreshReport(350)
   }
 
   // ------------------------------------------------------------ report
@@ -245,6 +250,60 @@ class Store {
         if (v) this.set({ verify: { ...v, running: false, outcome: badSeq === null ? 'ok' : 'broken', message } })
       }
     })
+  }
+
+  // ------------------------------------------------------------ landing hero: a real log, replayed and verified in the browser
+  private at(fn: () => void, ms: number) {
+    this.timers.push(window.setTimeout(fn, ms))
+  }
+  stopReplay() {
+    this.timers.forEach((t) => window.clearTimeout(t))
+    this.timers = []
+  }
+
+  /** Feed an already-recorded log (the bundled fixture) through the same path as live events. No API involved. */
+  startReplay(events: LogEvent[], gapMs = 1000) {
+    this.stopReplay()
+    this.es?.close()
+    this.es = null
+    this.reportOn = false
+    const play = (animate: boolean) => {
+      this.blocks = []
+      this.seqIndex.clear()
+      this.lastSpawn = 0
+      this.helloTotal = animate ? 0 : Infinity // Infinity: everything counts as history, nothing flies in
+      this.set({ source: 'recon', conn: 'live', connError: null, total: 0, firstSeq: 1, version: this.snap.version + 1, selected: null, hover: null, followLive: true, verify: null, report: null })
+      if (!animate) {
+        events.forEach((ev) => this.push(ev))
+        this.verifyLocal()
+        return
+      }
+      events.forEach((ev, i) => this.at(() => this.push(ev), 500 + i * gapMs))
+      const done = 500 + events.length * gapMs + 1000
+      this.at(() => this.verifyLocal(), done)
+      this.at(() => play(true), done + SWEEP_MS + 5000)
+    }
+    play(!reduced())
+  }
+
+  /** Recompute every hash and link in this browser (the same check the auditor makes) and play the sweep. */
+  async verifyLocal() {
+    const evs = this.blocks.map((b) => b.ev)
+    let prev = evs.length && evs[0].seq === 1 ? '0'.repeat(64) : evs[0]?.prev_hash
+    let badSeq: number | null = null
+    for (const ev of evs) {
+      if (ev.prev_hash !== prev || (await recomputeHash(ev)) !== ev.hash) { badSeq = ev.seq; break }
+      prev = ev.hash
+    }
+    const message = badSeq === null ? `chain intact: ${evs.length} events recomputed in this browser` : `chain broken at seq ${badSeq}`
+    const dur = reduced() ? 0 : SWEEP_MS
+    this.set({ verify: { startedAt: performance.now(), running: dur > 0, outcome: dur > 0 ? null : badSeq === null ? 'ok' : 'broken', message: dur > 0 ? null : message, events: evs.length, badSeq } })
+    if (dur > 0) {
+      this.at(() => {
+        const v = this.snap.verify
+        if (v) this.set({ verify: { ...v, running: false, outcome: badSeq === null ? 'ok' : 'broken', message } })
+      }, dur)
+    }
   }
 
   clearNotice() {
