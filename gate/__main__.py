@@ -1,5 +1,7 @@
 import argparse
 import asyncio
+import cProfile
+import os
 import signal
 
 from core.logio import FSYNC_POLICIES, ChainError
@@ -18,6 +20,11 @@ async def main(args) -> None:
     print(f"gate listening on {args.host}:{args.port} log={args.log} fsync={args.fsync} "
           f"batch_max={gate.batch_max} replayed_events={gate.book.last_seq}", flush=True)
     stop = asyncio.Event()
+    profile_path = os.environ.get("GATE_PROFILE")  # benchmark hook, off by default
+    if profile_path:
+        prof, loop = cProfile.Profile(), asyncio.get_running_loop()
+        loop.add_signal_handler(signal.SIGUSR1, prof.enable)  # start of measured window
+        loop.add_signal_handler(signal.SIGUSR2, lambda: (prof.disable(), prof.dump_stats(profile_path)))
     for sig in (signal.SIGINT, signal.SIGTERM):
         asyncio.get_running_loop().add_signal_handler(sig, stop.set)
     await stop.wait()

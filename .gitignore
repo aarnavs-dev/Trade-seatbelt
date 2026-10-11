@@ -10,3 +10,5 @@ dist/
 *.log
 out/
 *.egg-info/
+bench/data/
+bench/runs/
