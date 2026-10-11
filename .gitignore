@@ -13,3 +13,4 @@ out/
 bench/data/
 bench/runs/
 bench/results/PERFORMANCE_latest.md
+runs/

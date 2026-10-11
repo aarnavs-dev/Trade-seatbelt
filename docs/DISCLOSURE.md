@@ -45,6 +45,25 @@ and tested here. Numbers in `docs/PERFORMANCE.md` come from running the benchmar
 | httpx / httpcore | 0.28.1 / 1.0.9 | API tests only (`tests/test_api.py`, via Starlette's test client) | BSD-3-Clause / BSD-3-Clause |
 | certifi | 2026.7.22 | (httpx dependency) | MPL-2.0 |
 
+**Simulator extra (`pip install -e ".[sim]"`, `sim/`).** Only needed for live market-data snapshots; the built-in offline provider needs none of
+these. Versions and licenses read from each installed package's metadata (`importlib.metadata`) on 2026-10-11:
+
+| Package | Version | Used for | License per package metadata |
+|---|---|---|---|
+| yfinance | 1.7.0 | optional read-only price snapshot, fetched once per run. **Unofficial** wrapper over Yahoo Finance endpoints; it may rate-limit, change or break, and Yahoo's own terms apply to the data (see the terms note in the Tier 5 docs update) | Apache Software License |
+| pandas / numpy | 3.0.6 / 2.5.4 | (yfinance dependencies) | BSD License / `BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0` |
+| curl-cffi / cffi / pycparser | 0.16.3 / 2.1.1 / 3.11 | (yfinance dependencies) HTTP client | MIT / MIT-0 / BSD-3-Clause |
+| requests / urllib3 / charset-normalizer | 2.34.2 / 2.8.0 / 3.5.2 | (yfinance dependencies) | Apache Software License / MIT / MIT |
+| beautifulsoup4 / soupsieve / lxml | 4.15.0 / 3.0.1 / 6.1.3 | (yfinance dependencies) | MIT / MIT / BSD-3-Clause |
+| multitasking / platformdirs / websockets / protobuf | 0.0.13 / 4.13.0 / 17.2 / 7.36.2 | (yfinance dependencies) | Apache Software License / MIT / BSD-3-Clause / 3-Clause BSD License |
+| peewee | 4.5.3 | (yfinance dependency) | not stated in its package metadata; not verified here |
+| pytz / python-dateutil / six | 2026.5 / 2.9.0.post0 / 1.17.0 | (pandas / yfinance dependencies) | MIT / BSD License + Apache Software License / MIT |
+| httpx | 0.28.1 | Alpaca Market Data requests (`sim/providers.py`), already listed above for the API tests | BSD-3-Clause |
+
+Alpaca Market Data is used only if `ALPACA_KEY_ID` and `ALPACA_SECRET_KEY` are set in `.env` / the environment. It is read-only (latest trade),
+the code has no order endpoint, and the keys are never logged or written to a run directory. The Alpaca path has only been tested against a fake
+HTTP client, never against the live service.
+
 **Front end (`web/`, npm).** Versions and licenses below are read from `web/package.json` and from each installed package's own `package.json` (`license` field) in `web/node_modules`, resolved by `npm ls --all`; nothing is from memory.
 
 Direct runtime dependencies:

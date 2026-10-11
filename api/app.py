@@ -1,7 +1,8 @@
 """Thin read-only API for the dashboard. Never on the order hot path: it reads the log, it does not write it.
 
-The one exception to "read-only" is POST /demo/run, which starts its OWN throwaway gate process in a fresh temp dir.
-Clients choose a named source ("demo" or "recon"), never a file path."""
+The exceptions to "read-only" start OTHER processes and never write a log themselves: POST /demo/run (a throwaway gate in a
+fresh temp dir) and POST /runs (a simulator, which starts that run's own gate under runs/<id>/). Clients choose a named source
+("demo" or "recon") or a run id, never a file path."""
 
 import asyncio
 import tempfile
@@ -19,6 +20,8 @@ from api import bench as bench_mod
 from api import invariants as inv_mod
 from api import tail
 from api.demo import DemoRunner
+from api.runs import RunManager
+from api.runs_routes import build_router
 from api.sources import Sources
 from api.tamper import NothingToTamper, tamper_copy
 from auditor import counterfactual as cf
@@ -43,6 +46,7 @@ class Settings:
     recon_csv: Path = ROOT / "fixtures" / "recon" / "broker_fills.csv"
     cf_csv: Path = ROOT / "fixtures" / "recon" / "cf_trades.csv"
     default_demo_log: Path = ROOT / "out" / "demo" / "gate.log"
+    runs_dir: Path = ROOT / "runs"
     invariants_md: Path = ROOT / "docs" / "INVARIANTS.md"
     junit: Path = ROOT / "out" / "pytest-junit.xml"
     sse_poll: float = 0.1
@@ -72,6 +76,7 @@ def _err(status: int, error: str, message: str, **extra) -> JSONResponse:
 def create_app(settings: Settings | None = None) -> FastAPI:
     s = settings or Settings()
     sources = Sources(s.root, s.recon_log, s.default_demo_log)
+    runs = RunManager(s.runs_dir, s.root, s.rules, **s.extra.get("run_manager", {}))
     demo = DemoRunner(s.root, s.rules, s.orders, on_log=lambda p: setattr(sources, "demo_log", p))
 
     @asynccontextmanager
@@ -81,10 +86,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             demo.task.cancel()
             await asyncio.gather(demo.task, return_exceptions=True)
         demo.cleanup()
+        await run_in_threadpool(runs.shutdown)
 
     app = FastAPI(title="Trade Seatbelt API", docs_url=None, redoc_url=None, lifespan=lifespan)
     # DNS-rebinding guard: the API only answers for loopback host names.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
+
+    app.state.runs = runs
+    app.include_router(build_router(runs, s.sse_poll))
 
     @app.get("/health")
     def health():
