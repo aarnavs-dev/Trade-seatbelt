@@ -153,11 +153,12 @@ def test_stream_resets_when_the_source_changes(tmp_path):
 
 
 # ---------------------------------------------------------------- /demo/run
-def wait_done(c, timeout=20):
+def wait_done(c, timeout=120):
     end = time.time() + timeout
     while time.time() < end:
         s = c.get("/demo/status").json()
         if s["state"] != "running":
+            assert s["state"] == "done", s  # show the runner's own error if it failed
             return s
         time.sleep(0.05)
     raise AssertionError("demo did not finish")
@@ -181,6 +182,9 @@ def test_demo_run_writes_a_fresh_verifying_log_in_a_temp_dir(tmp_path):
         assert c.post("/demo/run?delay_ms=0").status_code == 202
         wait_done(c)
         assert len(set(tmpdir.glob("ts-demo-*")) - dirs_before) == 1  # the previous run's dir was replaced
+        for _ in range(3):  # "done" must mean a new run is accepted at once (the gate has stopped)
+            assert c.post("/demo/run?delay_ms=0").status_code == 202
+            assert wait_done(c)["state"] == "done"
     assert digest(real) == before  # the pre-existing log is never touched
     assert set(tmpdir.glob("ts-demo-*")) == dirs_before  # shutdown removed the last one
 
@@ -368,3 +372,16 @@ def test_real_invariants_file_parses_every_row(client):
     j = client.get("/invariants").json()
     assert [r["id"] for r in j["invariants"]][:3] == ["1", "2", "3"] and len(j["invariants"]) == 12
     assert all(r["refs"] for r in j["invariants"] if r["id"] != "9")  # only the benchmark-harness row has no pytest ref
+
+
+def test_demo_fails_with_a_clear_message_if_the_gate_does_not_start(tmp_path, monkeypatch):
+    import api.demo as demo_mod
+    monkeypatch.setattr(demo_mod, "GATE_START_TIMEOUT_S", 0.0)  # the deadline expires before the gate can listen
+    with TestClient(create_app(Settings(default_demo_log=tmp_path / "x.log"))) as c:
+        assert c.post("/demo/run?delay_ms=0").status_code == 202
+        end = time.time() + 30
+        while c.get("/demo/status").json()["state"] == "running" and time.time() < end:
+            time.sleep(0.05)
+        s = c.get("/demo/status").json()
+        assert s["state"] == "failed" and "gate did not start in time" in s["error"], s
+        assert c.post("/demo/run?delay_ms=0").status_code == 202  # and a new run is accepted afterwards

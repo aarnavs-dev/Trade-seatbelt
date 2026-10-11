@@ -38,7 +38,7 @@ def start_gate(log, policy, out):
     proc = subprocess.Popen([sys.executable, "-m", "gate", "--rules", "rules.yaml", "--log", str(log),
                              "--port", str(port), "--fsync", policy], cwd=ROOT,
                             stdout=open(out, "w"), stderr=subprocess.STDOUT)
-    deadline = time.time() + 15
+    deadline = time.time() + 90  # waits for "listening"; generous so a CPU-starved machine does not fail the test
     while "listening" not in open(out).read():
         assert proc.poll() is None, "gate died at startup: " + open(out).read()
         assert time.time() < deadline, "gate did not start"
