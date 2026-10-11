@@ -20,6 +20,7 @@ make setup     # creates .venv and installs dependencies
 
 ```
 make demo      # client -> gate -> log -> auditor -> report, then tamper checks
+make follow    # one paper follower over a leader's feed: pre-filters, gate, copier ledger, plain-English explanations (real replay data if fetchable, else the labelled SYNTHETIC FIXTURE)
 make demo-recon # reconciliation + counterfactual on generated fixtures, with a 10-line summary
 make api       # read-only API for the dashboard on 127.0.0.1:8000 (never on the order path)
 make web       # dashboard dev server on http://127.0.0.1:5173 (run `make api` in another terminal; needs Node 20+)

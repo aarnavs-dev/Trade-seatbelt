@@ -1,7 +1,7 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: leaders-setup setup sim demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
+.PHONY: follow leaders-setup setup sim demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
 
 setup:
 	$(PYTHON312) -m venv .venv
@@ -57,3 +57,11 @@ bench-docker:
 bench-report:
 	@test -n "$(FINAL)" || { echo "usage: make bench-report FINAL=bench/results/final_<stamp>.json [DOCKER=bench/results/docker_<stamp>.json]"; exit 1; }
 	$(PY) -m bench.report --native-file $(FINAL) $(if $(DOCKER),--docker-file $(DOCKER)) --out docs/PERFORMANCE.md
+
+# One follower over a leader's feed: real replay data if it can be fetched, else the SYNTHETIC fixture (labelled).
+# The default FOLLOW_ARGS tighten max_daily_loss to 300 cents for this run only (printed in the output; the repo's
+# rules.yaml is never changed) so that the demo shows the rules firing. Replace them to follow under the repo's limits:
+#   make follow FOLLOW_ARGS="--leader orb --offline"
+FOLLOW_ARGS ?= --limit max_daily_loss=300 --scale 1/1 --drawdown-stop 3000
+follow:
+	$(PY) -m copier follow $(FOLLOW_ARGS)

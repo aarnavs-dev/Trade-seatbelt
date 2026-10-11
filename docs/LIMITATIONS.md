@@ -146,3 +146,15 @@ The cProfile shares (native, pipelined, 8 connections, 100k orders; indicative, 
 - Chain reading takes one page (up to 1000) of signatures per signer. Devnet memos are public; the local feed is not signature-verified.
 - The devnet guard is a hostname check plus the cluster's genesis hash; it was not tested against a real mainnet node (tests use fakes).
 - Publisher sends without confirming finality; a lost transaction is visible only as a gap in `leader_seq` on chain.
+
+## Follower (`copier/`)
+
+- **Paper only.** An accepted order is the gate's simulated full fill at the signal's `ref_price` (the leader bar's close); there is no slippage, latency or partial fill.
+- **Price-band anchor** is the previous session's last 5-minute-bar close (IEX or Yahoo), not an official closing price. Prices that move more than the band from it over a day are rejected by `PRICE_BAND`; with the synthetic fixture the walk can drift past it.
+- **Gate time is wall-clock.** A day of history replays in seconds, so `max_orders_per_minute` and the loss-streak cooldown (300 s) run on real elapsed time, not replayed time. Two live runs therefore have different gate `ts` and hashes; byte-identical logs are shown only with the gate's injected clock (tests).
+- **A rejected or skipped BUY does not cancel the leader's later SELL.** The follower can then open an unintended short (seen in a demo run: a SELL that follows a MAX_DAILY_LOSS-rejected BUY). The gate still applies every limit, but the copier has no "only close what I hold" filter.
+- **Last bar of the day:** a signal is stamped with its bar's end, so the closing bar ends exactly at 16:00. `MARKET_CLOSED` treats open and close as both tradable so a leader's closing exit can be copied; a real order at that instant would not fill.
+- The leader's drawdown is its realized P&L from its own signals at `ref_price`, without fees, and it stops only orders that grow the follower's position. `FEED_GAP` blocks only the signal right after a gap.
+- The local feed is not signature-verified; its single signer is `local`. Chain feeds are supported by the data model (`copier/feed.py`) but `make follow` runs the local feed only.
+- Restart safety needs the same feed, config and rules: the copier recomputes its skips and refuses to continue if `copier.log` disagrees.
+- Real-data fetching is exercised in tests only through fakes; yfinance gives about 60 days of 5m bars and may fail or rate-limit, in which case the labelled fixture is used.
