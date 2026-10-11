@@ -1,5 +1,9 @@
 # Disclosure
 
+## This project's license
+
+MIT, Copyright (c) 2026 aarnav.dev — see the [LICENSE](../LICENSE) file in the repository root.
+
 ## What we built (this project's own code)
 
 `core/`, `gate/`, `auditor/`, `client/`, `fixtures/`, `bench/`, `tests/`, `scripts/`, the `Makefile`, `Dockerfile` and

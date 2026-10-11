@@ -191,6 +191,50 @@ def fsync_section(plain, full, micro):
     return L
 
 
+def provenance(cmap, after, plain):
+    if not cmap:
+        return []
+    b, new = cmap["benchmarked"], cmap["verified_at"]
+    L = ["## Commit hash mapping", "",
+         "The commit hashes recorded in the raw result files (and shown in the tables above) are from **before** the history was "
+         f"rebased onto the GitHub repository's initial `LICENSE` commit (`{cmap['rebased_onto']}`). The raw result files are "
+         "deliberately left unmodified, so they still show the old hashes. " + cmap["note"], "",
+         table(["Old hash (in result files)", "New hash (in pushed history)", "Commit"],
+               [[f"`{m['old']}`", f"`{m['new']}`", m["subject"]] for m in cmap["mapping"]]),
+         "Each new hash was checked with `git cat-file -t` (all are commits) and `git merge-base --is-ancestor <hash> origin/main` "
+         "(all are in the pushed history); the old hashes are not reachable from it.", "",
+         "## Code changes after the benchmarked commit", "",
+         f"Every native run in the main tables, and the code in the Docker image, is from commit `{b['old']}` (now `{b['new']}`). "
+         f"What changed in `core/` and `gate/` since then (checked with `git diff {b['new']} HEAD` at `{new}`):", "",
+         table(["Change", "Where", "When it runs"], [
+             ["Opt-in `--full-fsync` (`F_FULLFSYNC` instead of `os.fsync`; off by default)",
+              "`core/logio.py` (`LogWriter`), parameter plumbing in `gate/engine.py` and `gate/__main__.py`", "only if the flag is given"],
+             ["Torn-tail truncation: a partial last line is removed, kept in a sidecar file and noted",
+              "`core/logio.py` (`repair_torn_tail`, new), called from `Gate.start()` in `gate/engine.py`", "once, at startup"],
+             ["Gate output lines: `torn_tail_bytes_removed=` at startup, `state_hash=` at shutdown, `+F_FULLFSYNC` tag",
+              "`gate/__main__.py`", "startup / shutdown"]]),
+         "**The hot path is unchanged:** parse and validate (`Order`), dedupe, `check()`, event construction and hashing, `event_line`, "
+         "the `LogWriter.write` `os.write` loop, the default `os.fsync(fd)` call, resolving the futures and the reply writer. "
+         f"`git diff {b['new']} HEAD` shows no change at all in `core/rules.py`, `core/book.py`, `core/ledger.py`, `core/canon.py`, "
+         "`core/events.py`, `core/money.py`, `gate/server.py` or `auditor/`, and in `gate/engine.py` only the import line, the "
+         "`Gate.__init__` parameters and `Gate.start()` differ (`submit`, `_handle`, `_run` and `_commit` are untouched).", "",
+         "The one difference on that path: `LogWriter.write` now tests `if self.full_fsync:` before its fsync call, i.e. one attribute "
+         "check per fsync in the default configuration. The call itself is the same `os.fsync(self.fd)`.", ""]
+    if after and plain:
+        rows = []
+        for fs, m, c in (("batched", "pipelined", 8), ("per_order", "pipelined", 8), ("batched", "closed", 1), ("per_order", "closed", 1)):
+            a, p = get(after, fs, m, c), get(plain, fs, m, c)
+            if a and p:
+                rows.append([fs, m, c, f"{a['orders_per_sec']['median']:,.0f}", f"{p['orders_per_sec']['median']:,.0f}"])
+        L += ["**Not re-measured:** the 100k native and Docker numbers were not re-run on the final code. As a consistency check only "
+              "(not proof), the 20k `os.fsync` run in the fsync section above was taken with the `--full-fsync` option present in the "
+              "working tree (before the torn-tail change), and compares with the earlier 20k post-optimization run like this "
+              "(orders/s, medians):", "",
+              table(["fsync", "mode", "conns", "20k run before `--full-fsync` existed", "20k run with it present, off"], rows),
+              "The torn-tail change came after every benchmark run and only executes at startup.", ""]
+    return L
+
+
 def comparison(nat, dock):
     rows = []
     for r in nat["summary"]:
@@ -285,14 +329,14 @@ def interpretation(nat, dock):
     return L
 
 
-def build(nat, dock, before, after, plain=None, full=None, micro=None) -> str:
+def build(nat, dock, before, after, plain=None, full=None, micro=None, cmap=None) -> str:
     w, n = nat["workload"], nat["orders"]
     split = ", ".join(f"{k} {v:,}" for k, v in w["by_reason"].items() if k != "OK")
     L = ["# Performance", "",
          "Simulated trading only. Every number below was measured by this repo's benchmark on the machine described and is read from "
          "`bench/results/` — nothing is estimated. There are **two separately labelled sets of runs**: "
          "**Native** (plain host process, **no CPU or memory limits enforced**) and **Docker** (gate in a container limited to "
-         "`--cpus=1 --memory=512m`, on macOS inside Docker Desktop's Linux VM). Do not mix their numbers.", ""]
+         "`--cpus=1 --memory=512m`, on macOS inside Docker Desktop's Linux VM). Do not mix their numbers. Commit hashes in the result files are pre-rebase; see **Commit hash mapping** near the end.", ""]
     L += ["## Workload (both sections)", "",
           f"- {n:,} orders, seed 7, unique `client_order_id`s, 32 symbols plus one epilogue symbol.",
           f"- Reference model (core's `check()` run through `Book`, in `bench/workload.py`): **{w['accepted']:,} ACCEPT "
@@ -336,6 +380,7 @@ def build(nat, dock, before, after, plain=None, full=None, micro=None) -> str:
         L += comparison(nat, dock)
     else:
         L += ["## Docker results", "", "**Not run** (no Docker result file found).", ""]
+    L += provenance(cmap, after, plain)
     inv = [r["id"] for r in nat["runs"] + nat["profiles"] if not r["valid"]]
     dinv = [r["id"] for r in dock["runs"] if not r["valid"]] if dock else []
     L += ["## Failures and skipped", "",
@@ -358,5 +403,6 @@ if __name__ == "__main__":
         raise SystemExit("no bench/results/final_*.json; run make bench first")
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     open(a.out, "w").write(build(nat, json.load(open(a.docker_file)) if a.docker_file else newest("docker"), newest("before_opt"), newest("after_opt"),
-                                   newest("fsync_plain"), newest("fsync_full"), newest("fsync_micro")))
+                                   newest("fsync_plain"), newest("fsync_full"), newest("fsync_micro"),
+                                   json.load(open(os.path.join(ROOT, "bench", "commit_map.json")))))
     print(f"wrote {a.out}")

@@ -1,6 +1,6 @@
 # Performance
 
-Simulated trading only. Every number below was measured by this repo's benchmark on the machine described and is read from `bench/results/` — nothing is estimated. There are **two separately labelled sets of runs**: **Native** (plain host process, **no CPU or memory limits enforced**) and **Docker** (gate in a container limited to `--cpus=1 --memory=512m`, on macOS inside Docker Desktop's Linux VM). Do not mix their numbers.
+Simulated trading only. Every number below was measured by this repo's benchmark on the machine described and is read from `bench/results/` — nothing is estimated. There are **two separately labelled sets of runs**: **Native** (plain host process, **no CPU or memory limits enforced**) and **Docker** (gate in a container limited to `--cpus=1 --memory=512m`, on macOS inside Docker Desktop's Linux VM). Do not mix their numbers. Commit hashes in the result files are pre-rebase; see **Commit hash mapping** near the end.
 
 ## Workload (both sections)
 
@@ -297,6 +297,45 @@ Same machine, same workload and seed, same load generator; only where the gate r
 | none (NON-DURABLE) | pipelined | 8 | 110,430 | 76,102 | -31% |  |
 | none (NON-DURABLE) | pipelined | 32 | 107,395 | 75,081 | -30% |  |
 
+
+## Commit hash mapping
+
+The commit hashes recorded in the raw result files (and shown in the tables above) are from **before** the history was rebased onto the GitHub repository's initial `LICENSE` commit (`6781848`). The raw result files are deliberately left unmodified, so they still show the old hashes. Commit hashes before and after `git pull --rebase origin main` (the GitHub repo already had a LICENSE commit). Matched by patch-id and checked against the reflog.
+
+| Old hash (in result files) | New hash (in pushed history) | Commit |
+|---|---|---|
+| `0700ba1` | `5373dd6` | Stage 1: core, gate, auditor, client, fixtures |
+| `7261814` | `cfa5ea2` | Bench harness, workload, load generator, rate-limit replay test |
+| `fd47adb` | `67ff2a9` | Gate: coalesce completed responses into one socket write |
+| `641f68f` | `388fec8` | Docs, Docker benchmark, F_FULLFSYNC option, durability tests |
+| `0fdcd79` | `7b0c273` | Crash-recovery tests, torn-tail repair, safe bench output, license check |
+
+Each new hash was checked with `git cat-file -t` (all are commits) and `git merge-base --is-ancestor <hash> origin/main` (all are in the pushed history); the old hashes are not reachable from it.
+
+## Code changes after the benchmarked commit
+
+Every native run in the main tables, and the code in the Docker image, is from commit `fd47adb` (now `67ff2a9`). What changed in `core/` and `gate/` since then (checked with `git diff 67ff2a9 HEAD` at `7b0c273`):
+
+| Change | Where | When it runs |
+|---|---|---|
+| Opt-in `--full-fsync` (`F_FULLFSYNC` instead of `os.fsync`; off by default) | `core/logio.py` (`LogWriter`), parameter plumbing in `gate/engine.py` and `gate/__main__.py` | only if the flag is given |
+| Torn-tail truncation: a partial last line is removed, kept in a sidecar file and noted | `core/logio.py` (`repair_torn_tail`, new), called from `Gate.start()` in `gate/engine.py` | once, at startup |
+| Gate output lines: `torn_tail_bytes_removed=` at startup, `state_hash=` at shutdown, `+F_FULLFSYNC` tag | `gate/__main__.py` | startup / shutdown |
+
+**The hot path is unchanged:** parse and validate (`Order`), dedupe, `check()`, event construction and hashing, `event_line`, the `LogWriter.write` `os.write` loop, the default `os.fsync(fd)` call, resolving the futures and the reply writer. `git diff 67ff2a9 HEAD` shows no change at all in `core/rules.py`, `core/book.py`, `core/ledger.py`, `core/canon.py`, `core/events.py`, `core/money.py`, `gate/server.py` or `auditor/`, and in `gate/engine.py` only the import line, the `Gate.__init__` parameters and `Gate.start()` differ (`submit`, `_handle`, `_run` and `_commit` are untouched).
+
+The one difference on that path: `LogWriter.write` now tests `if self.full_fsync:` before its fsync call, i.e. one attribute check per fsync in the default configuration. The call itself is the same `os.fsync(self.fd)`.
+
+**Not re-measured:** the 100k native and Docker numbers were not re-run on the final code. As a consistency check only (not proof), the 20k `os.fsync` run in the fsync section above was taken with the `--full-fsync` option present in the working tree (before the torn-tail change), and compares with the earlier 20k post-optimization run like this (orders/s, medians):
+
+| fsync | mode | conns | 20k run before `--full-fsync` existed | 20k run with it present, off |
+|---|---|---|---|---|
+| batched | pipelined | 8 | 110,196 | 111,740 |
+| per_order | pipelined | 8 | 35,779 | 36,183 |
+| batched | closed | 1 | 11,362 | 11,403 |
+| per_order | closed | 1 | 11,269 | 11,416 |
+
+The torn-tail change came after every benchmark run and only executes at startup.
 
 ## Failures and skipped
 

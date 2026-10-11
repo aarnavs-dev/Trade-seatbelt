@@ -1,0 +1,13 @@
+{
+  "note": "Commit hashes before and after `git pull --rebase origin main` (the GitHub repo already had a LICENSE commit). Matched by patch-id and checked against the reflog.",
+  "rebased_onto": "6781848",
+  "mapping": [
+    {"old": "0700ba1", "new": "5373dd6", "subject": "Stage 1: core, gate, auditor, client, fixtures"},
+    {"old": "7261814", "new": "cfa5ea2", "subject": "Bench harness, workload, load generator, rate-limit replay test"},
+    {"old": "fd47adb", "new": "67ff2a9", "subject": "Gate: coalesce completed responses into one socket write"},
+    {"old": "641f68f", "new": "388fec8", "subject": "Docs, Docker benchmark, F_FULLFSYNC option, durability tests"},
+    {"old": "0fdcd79", "new": "7b0c273", "subject": "Crash-recovery tests, torn-tail repair, safe bench output, license check"}
+  ],
+  "benchmarked": {"old": "fd47adb", "new": "67ff2a9"},
+  "verified_at": "7b0c273"
+}

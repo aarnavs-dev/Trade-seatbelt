@@ -61,3 +61,7 @@ Not built yet: the broker-CSV reconciliation, `api/`, `web/`, and the optional G
 - Invariants and the tests that try to break them: [docs/INVARIANTS.md](docs/INVARIANTS.md)
 - Limitations and the next bottleneck: [docs/LIMITATIONS.md](docs/LIMITATIONS.md)
 - What we built vs. what we used: [docs/DISCLOSURE.md](docs/DISCLOSURE.md)
+
+## License
+
+MIT, Copyright (c) 2026 aarnav.dev. See [LICENSE](LICENSE). Third-party packages and their licenses are listed in [docs/DISCLOSURE.md](docs/DISCLOSURE.md).
