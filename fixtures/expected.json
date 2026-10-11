@@ -1,0 +1,28 @@
+{
+  "accepted": 10,
+  "by_symbol": {
+    "AAPL": {
+      "fees": 400,
+      "gross": -250,
+      "net": -650
+    },
+    "MSFT": {
+      "fees": 200,
+      "gross": 10000,
+      "net": 9800
+    }
+  },
+  "cash": 9150,
+  "duplicates_sent": 1,
+  "events": 25,
+  "fees": 600,
+  "positions": {},
+  "realized_gross": 9750,
+  "realized_net": 9150,
+  "rejected": 15,
+  "rejects_by_reason": {
+    "LOSS_STREAK_COOLDOWN": 1,
+    "MAX_POSITION": 7,
+    "PRICE_BAND": 7
+  }
+}

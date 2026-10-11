@@ -1,0 +1,12 @@
+# All money is integer minor units (cents). No floats anywhere.
+version: 1
+symbols:
+  AAPL: { reference_price: 19000 }   # 190.00
+  MSFT: { reference_price: 42000 }   # 420.00
+max_position_per_symbol: 100         # absolute shares, after the order
+max_daily_loss: 5000                 # realized loss (gross P&L minus fees) at which risk-increasing orders stop
+price_band_pct: 5                    # integer percent from reference_price
+max_orders_per_minute: 600           # orders in the last 60s, not counting RATE_LIMIT rejects
+loss_streak_cooldown: { losses: 3, cooldown_seconds: 300 }
+kill_switch: false                   # true rejects every order
+fees: { per_share_minor: 1, min_per_order_minor: 50 }
