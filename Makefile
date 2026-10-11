@@ -1,12 +1,12 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: setup demo demo-recon test bench bench-docker bench-report clean
+.PHONY: setup demo demo-recon test bench bench-docker bench-report clean api web web-build
 
 setup:
 	$(PYTHON312) -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
-	$(PY) -m pip install --quiet -e ".[dev]"
+	$(PY) -m pip install --quiet -e ".[dev,api]"
 
 demo:
 	bash scripts/demo.sh
@@ -16,6 +16,17 @@ demo-recon:
 
 test:
 	$(PY) -m pytest -q
+
+# API for the dashboard: 127.0.0.1:8000 only, read-only (see api/app.py)
+api:
+	$(PY) -m api
+
+# Dashboard dev server on http://127.0.0.1:5173 (proxies /api to the API; start `make api` in another terminal)
+web:
+	cd web && ([ -d node_modules ] || npm ci) && npm run dev
+
+web-build:
+	cd web && ([ -d node_modules ] || npm ci) && npm run build
 
 clean:
 	rm -rf out .pytest_cache .hypothesis

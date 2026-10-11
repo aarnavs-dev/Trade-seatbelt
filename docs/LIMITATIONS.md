@@ -10,7 +10,7 @@ What this project does not do, does not guarantee, or has not shown. Measured fi
 - **Reference prices are static** values in `rules.yaml`; the price band is measured against them, not a live market.
 - **No** stock splits or other corporate actions, wash-sale or tax-lot rules, short-borrow costs, FX or multiple currencies.
   P&L is FIFO, in integer cents, with a per-share fee that has a per-order minimum.
-- The brief's `api/`, `web/` and optional Gemini / ElevenLabs / Tiger Data integrations are **not built**.
+- The brief's `web/` (in progress) and optional Gemini / ElevenLabs / Tiger Data integrations are **not built**.
 - **Rate limit, daily loss and cooldown** are covered by unit and replay tests, not by the benchmark (it disables the first two
   and exercises the cooldown only in a short epilogue).
 

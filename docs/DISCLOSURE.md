@@ -6,7 +6,7 @@ MIT, Copyright (c) 2026 aarnav.dev — see the [LICENSE](../LICENSE) file in the
 
 ## What we built (this project's own code)
 
-`core/`, `gate/`, `auditor/`, `client/`, `fixtures/`, `bench/`, `tests/`, `scripts/`, the `Makefile`, `Dockerfile` and
+`core/`, `gate/`, `auditor/`, `client/`, `api/`, `fixtures/`, `bench/`, `tests/`, `scripts/`, the `Makefile`, `Dockerfile` and
 these docs. The design (hash-chained log, pure `check()` shared by gate and auditor, single-writer gate with
 group commit, benchmark verification against a reference model) is ours.
 
@@ -36,6 +36,14 @@ and tested here. Numbers in `docs/PERFORMANCE.md` come from running the benchmar
 | Hypothesis | 6.168.5 | property-based tests | MPL-2.0 |
 | sortedcontainers | 2.4.0 | (Hypothesis dependency) | Apache 2.0 |
 | psutil | 7.2.2 | benchmark CPU / memory sampling | BSD-3-Clause |
+| FastAPI | 0.143.0 | `api/` (dashboard backend) | MIT |
+| Starlette | 1.7.0 | (FastAPI dependency) request/response, SSE streaming, test client | BSD-3-Clause |
+| uvicorn | 0.54.0 | serves `api/` on 127.0.0.1 | BSD-3-Clause |
+| h11 / click | 0.16.0 / 8.5.0 | (uvicorn dependencies) | MIT / BSD-3-Clause |
+| anyio / idna | 4.15.1 / 3.20 | (Starlette / httpx dependencies) | MIT / BSD-3-Clause |
+| annotated-doc | 0.0.5 | (FastAPI dependency) | MIT |
+| httpx / httpcore | 0.28.1 / 1.0.9 | API tests only (`tests/test_api.py`, via Starlette's test client) | BSD-3-Clause / BSD-3-Clause |
+| certifi | 2026.7.22 | (httpx dependency) | MPL-2.0 |
 
 setuptools is the build backend named in `pyproject.toml`; it is not installed in the virtualenv, so its license was not checked.
 
@@ -52,8 +60,7 @@ setuptools is the build backend named in `pyproject.toml`; it is not installed i
 ## Not used
 
 No external API or service is called. The following are described in the project brief as optional extras and are
-**not built or integrated**: Gemini API, ElevenLabs, Tiger Data (TimescaleDB), FastAPI, and the React / three.js
-front end. The application runs fully offline and needs no keys; `.env.example` lists placeholders for them only.
+**not built or integrated**: Gemini API, ElevenLabs, Tiger Data (TimescaleDB). The application runs fully offline and needs no keys; `.env.example` lists placeholders for them only.
 
 ## Data
 

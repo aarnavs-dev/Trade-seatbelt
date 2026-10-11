@@ -21,6 +21,7 @@ make setup     # creates .venv and installs dependencies
 ```
 make demo      # client -> gate -> log -> auditor -> report, then tamper checks
 make demo-recon # reconciliation + counterfactual on generated fixtures, with a 10-line summary
+make api       # read-only API for the dashboard on 127.0.0.1:8000 (never on the order path)
 make test      # unit, property-based (Hypothesis), durability and tamper tests
 make bench     # benchmark (native); BENCH_N=20000 BENCH_REPS=1 make bench for a quick run
 make bench-docker   # same matrix with the gate in a 1 CPU / 512 MB container (needs Docker)
@@ -74,7 +75,9 @@ flowchart LR
 - `client/` sends orders from a fixture file. `fixtures/` generates them with a fixed seed and hand-computed expected totals.
 - `bench/` workload, load generator, harness and report generator. `tests/`. `docs/`.
 
-Not built yet: `api/`, `web/`, and the optional Gemini / ElevenLabs / Tiger Data integrations.
+- `api/` thin FastAPI for the dashboard, bound to 127.0.0.1 only: `GET /report`, `GET /events/stream` (SSE tail of the log), `POST /demo/run` (the demo flow with its own gate process in a temp dir), `POST /tamper` (edits a *copy* of the log, verifies the copy, returns the first bad seq; the real log is only read and no path is taken from the client), `GET|POST /recon` and `GET|POST /counterfactual` (bundled fixtures, or your CSV as the raw request body, 1 MB cap, errors name the row), `GET /bench` (stored numbers from `bench/results/*.json`, nothing computed).
+
+Not built yet: `web/` (in progress), and the optional Gemini / ElevenLabs / Tiger Data integrations.
 
 ## Results and docs
 
