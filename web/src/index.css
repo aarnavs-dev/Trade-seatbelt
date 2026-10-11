@@ -118,8 +118,14 @@ dl.plain { margin: 0; border-top: 1px solid var(--line); }
 /* ---------- misc ---------- */
 .note { border-left: 2px solid var(--line-2); padding: 2px 0 2px var(--s2); color: var(--ink-2); }
 .note-warn { border-left-color: var(--warn); }
-.hero h1 { font-size: clamp(40px, 6.4vw, 84px); line-height: 1.04; letter-spacing: -0.025em; max-width: 14ch; }
-.hero .sub { font-family: var(--font-serif); font-size: clamp(20px, 2.2vw, 28px); color: var(--ink-2); max-width: 36ch; line-height: 1.3; }
+.hero { text-align: center; }
+.hero h1, .hero .sub { text-wrap: balance; }
+.hero h1 { font-size: clamp(40px, 6.4vw, 84px); line-height: 1.04; letter-spacing: -0.025em; max-width: 16ch; margin-inline: auto; }
+.hero .sub { font-family: var(--font-serif); font-size: clamp(20px, 2.2vw, 28px); color: var(--ink-2); max-width: 34ch; line-height: 1.3; margin-inline: auto; }
+.hero .actions { display: flex; justify-content: center; align-items: center; gap: var(--s4); flex-wrap: wrap; }
+.sec-title { font-size: clamp(30px, 3.4vw, 40px); text-align: center; margin-bottom: var(--s6); }
+.center-col, .steps.center-col, ul.center-col { max-width: 760px; margin-inline: auto; }
+.center-col .prose { max-width: none; }
 .rule-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .rule-list li { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--s3); padding: 16px 0; border-bottom: 1px solid var(--line); }
 @media (max-width: 600px) { .rule-list li { grid-template-columns: 1fr; gap: 4px; } }
@@ -166,6 +172,12 @@ details > summary { cursor: pointer; font-weight: 500; }
 .lbl-step { font: 500 13px var(--font-sans); color: var(--ink-2); text-align: center; white-space: normal; width: 150px; margin-left: 0; line-height: 1.3; }
 .chain2d { overflow-x: auto; overflow-y: hidden; width: 100%; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
 .chain2d-note { font-size: 12px; color: var(--ink-3); margin: 8px 0 0; }
-.caption-line { min-height: 28px; font: 500 15px var(--font-sans); color: var(--ink); }
-.ill { font-size: 12.5px; color: var(--ink-3); }
+.caption-line { text-align: center; min-height: 28px; font: 500 15px var(--font-sans); color: var(--ink); }
+.ill { font-size: 12.5px; color: var(--ink-3); text-align: center; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* phone: the five steps as a vertical list */
+.flowlist { list-style: none; margin: 0 auto; padding: 0 0 0 12px; max-width: 360px; border-left: 1px solid var(--line-2); }
+.flowlist li { position: relative; padding: 0 0 var(--s3) var(--s3); font-weight: 500; }
+.flowlist li .dot { position: absolute; left: -16px; top: 7px; margin: 0; }
+.flowlist small { display: block; font-weight: 400; color: var(--ink-3); font-size: 13.5px; margin-top: 4px; }

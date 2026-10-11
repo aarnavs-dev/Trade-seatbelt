@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import ChainScene, { useFlat } from '../scene/ChainScene'
 import { ChainStore } from '../lib/store'
 import { HERO_TRAVEL_MS, startHero } from '../lib/hero'
+import { usePhone } from '../lib/env'
 import { Page } from './kit'
 
 const REPO = 'https://github.com/aarnavs-dev/Trade-seatbelt'
@@ -78,15 +79,30 @@ function Flow() {
 
 const STEP_TEXT = ['Leader signs a signal', 'Solana devnet records it publicly', 'Your copier verifies the signer', 'Your rules approve or reject', 'Your audit log keeps the proof']
 
+/** Phone width: the five steps as a vertical list (the wide diagram would shrink to unreadable text). Static, so it is also calm. */
+function FlowList() {
+  return (
+    <div className="container" style={{ paddingBottom: 'var(--s6)' }}>
+      <ol className="flowlist" aria-label="The five steps">
+        {STEP_TEXT.map((t, i) => (
+          <li key={t}><i className={`dot ${i === 3 ? 'dot-bad' : 'dot-ok'}`} /><span>{t}</span>
+            {i === 3 && <small>Example stop: {REASONS[0].replace('Stopped: ', '')}</small>}</li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 /** The five steps as a slow 3D scene (or the 2D diagram on phones, with reduced motion, or without WebGL). */
 function Hero() {
   const { flat } = useFlat()
+  const phone = usePhone()
   const store = useMemo(() => new ChainStore({ travelMs: HERO_TRAVEL_MS, spawnGapMs: 0 }), [])
   const [caption, setCaption] = useState('Every signal passes through your rules before anything is copied.')
   useEffect(() => (flat ? undefined : startHero(store, setCaption)), [flat, store])
   return (
     <section aria-label="How a signal flows" data-testid="hero-scene">
-      <ChainScene store={store} variant="hero" fallback={<div className="container" style={{ paddingBottom: 'var(--s6)' }}><Flow /></div>} label={`The five steps: ${STEP_TEXT.join(', ')}.`} />
+      <ChainScene store={store} variant="hero" fallback={phone ? <FlowList /> : <div className="container" style={{ paddingBottom: 'var(--s6)' }}><Flow /></div>} label={`The five steps: ${STEP_TEXT.join(', ')}.`} />
       {!flat && (
         <div className="container" style={{ paddingTop: 'var(--s2)' }}>
           <p className="caption-line" key={caption} data-testid="hero-caption"><span className="caption-fade">{caption}</span></p>
@@ -108,7 +124,7 @@ export default function Landing() {
         <div className="container stack-lg">
           <h1>Follow any trader, but never beyond your own limits.</h1>
           <p className="sub">Every copied trade has to pass your rules first, and every rejection is explained.</p>
-          <p style={{ display: 'flex', gap: 'var(--s4)', alignItems: 'center', flexWrap: 'wrap' }}>
+          <p className="actions">
             <a className="btn btn-primary" href="/rules" data-testid="cta-rules">Set your rules</a>
             <a className="link-quiet" href="#how" onClick={(e) => { e.preventDefault(); how.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }) }}>How it works</a>
           </p>
@@ -118,9 +134,9 @@ export default function Landing() {
       <Hero />
 
       <section className="section" id="how" ref={how}>
-        <div className="container grid12">
-          <h2 className="c-1-5" style={{ fontSize: 40 }}>How Solana is used</h2>
-          <div className="c-7-6 stack-lg">
+        <div className="container">
+          <h2 className="sec-title">How Solana is used</h2>
+          <div className="center-col stack-lg">
             <ol className="steps">
               <li><div><h3 style={{ fontSize: 22 }}>Publish</h3><p className="muted prose">The leader’s strategy posts each trade as a signed memo transaction on Solana devnet.</p></div></li>
               <li><div><h3 style={{ fontSize: 22 }}>Verify</h3><p className="muted prose">Anyone can read it. Your copier accepts only signals signed by the leader’s key, and every signal links to Solana Explorer.</p></div></li>
@@ -133,9 +149,9 @@ export default function Landing() {
       </section>
 
       <section className="section">
-        <div className="container grid12">
-          <h2 className="c-1-5" style={{ fontSize: 40 }}>How your rules protect you</h2>
-          <div className="c-7-6 stack-lg">
+        <div className="container">
+          <h2 className="sec-title">How your rules protect you</h2>
+          <div className="center-col stack-lg">
             <ul className="rule-list">
               <Rule t="Biggest position in one stock" d="No order may take you above the number of shares you chose." />
               <Rule t="Most you can lose in a day" d="Once you have lost this much, new risk is blocked. Closing a position is always allowed." />
@@ -158,9 +174,9 @@ export default function Landing() {
       </section>
 
       <section className="section">
-        <div className="container grid12">
-          <h2 className="c-1-5" style={{ fontSize: 40 }}>What you can check</h2>
-          <ol className="steps c-7-6">
+        <div className="container">
+          <h2 className="sec-title">What you can check</h2>
+          <ol className="steps center-col">
             <li><div><h3 style={{ fontSize: 22 }}>A hash-chained log</h3><p className="muted prose">Every decision is written to an append-only log. Each line carries the hash of the line before it, so an edit, a deletion or a reordering is detectable.</p></div></li>
             <li><div><h3 style={{ fontSize: 22 }}>A verify button</h3><p className="muted prose">The audit page re-checks the whole chain and names the first line that does not hold.</p></div></li>
             <li><div><h3 style={{ fontSize: 22 }}>Tests and docs</h3><p className="muted prose">The invariants, the benchmark method and the known limits are written down next to the code. <a href={REPO} target="_blank" rel="noopener noreferrer">Read the repository</a>.</p></div></li>
@@ -169,9 +185,9 @@ export default function Landing() {
       </section>
 
       <footer className="section" style={{ paddingBottom: 'var(--s8)' }}>
-        <div className="container grid12">
-          <p className="label c-1-5">Honest limits</p>
-          <ul className="c-7-6 muted prose" style={{ margin: 0, paddingLeft: 18 }}>
+        <div className="container">
+          <p className="label" style={{ textAlign: 'center', marginBottom: 'var(--s3)' }}>Honest limits</p>
+          <ul className="center-col muted" style={{ margin: '0 auto', paddingLeft: 18 }}>
             <li>Fills are simulated. No real orders, no real money, no broker connection.</li>
             <li>Signals are published to Solana devnet, a test network that can be reset.</li>
             <li>Sessions replay historical data unless a live source is enabled.</li>

@@ -98,7 +98,7 @@ let run
   await page.close()
 }
 {
-  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })).newPage(); watch(page)
+  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1.5, isMobile: true, hasTouch: true })).newPage(); watch(page)
   await page.goto(BASE + '/'); await page.waitForSelector('[data-testid=cta-rules]'); await page.waitForTimeout(1500)
   await page.screenshot({ path: OUT + 'landing-390.png', fullPage: true }); report(await page.evaluate(audit), '390 /')
   await page.goto(BASE + '/follow?run=' + run); await page.waitForSelector('[data-testid=row]', { timeout: 30000 }); await page.waitForTimeout(1500)

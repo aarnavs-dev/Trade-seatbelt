@@ -11,14 +11,17 @@ export type Variant = 'hero' | 'medium' | 'strip' | 'mini' | 'line'
 interface Cfg { rot: number; gate: boolean; decor: boolean; maxv: number; halo: number; labels: number; marker: boolean; interactive: boolean; wheel: boolean; dot: number }
 /** Landing hero (the five steps), audit (medium), follow strip, dashboard mini, rules line. Visible blocks are capped at ~150. */
 const VARIANTS: Record<Variant, Cfg> = {
-  hero: { halo: 3.6, rot: 0.16, gate: true, decor: true, maxv: 60, labels: 0, marker: false, interactive: false, wheel: false, dot: 0.34 },
+  hero: { halo: 3.6, rot: 0, gate: true, decor: true, maxv: 60, labels: 0, marker: false, interactive: false, wheel: false, dot: 0.34 },
   medium: { halo: 3.6, rot: 0.34, gate: true, decor: false, maxv: 150, labels: 14, marker: true, interactive: true, wheel: true, dot: 0.17 },
   strip: { halo: 1.7, rot: 0, gate: false, decor: false, maxv: 40, labels: 0, marker: true, interactive: true, wheel: false, dot: 0.17 },
   mini: { halo: 1.7, rot: 0, gate: false, decor: false, maxv: 30, labels: 0, marker: false, interactive: false, wheel: false, dot: 0.17 },
   line: { halo: 1.7, rot: 0, gate: false, decor: false, maxv: 24, labels: 0, marker: false, interactive: false, wheel: false, dot: 0.17 },
 }
-const LEADER_X = -22, DEV_X0 = -18, DEV_N = 6, DEV_DX = 1.9, COPIER_X = -5
-const STEP_X = [LEADER_X, DEV_X0 + (DEV_N - 1) * DEV_DX / 2, COPIER_X, 0, 8.5]
+const STEP_GAP = 9                                   // the five steps sit evenly on one line, the rules ring in the middle of the five
+const LEADER_X = -3 * STEP_GAP, COPIER_X = -STEP_GAP, DEV_N = 6, DEV_DX = 1.9
+const DEV_X0 = -2 * STEP_GAP - ((DEV_N - 1) * DEV_DX) / 2
+const STEP_X = [LEADER_X, -2 * STEP_GAP, COPIER_X, 0, STEP_GAP]
+const HERO_CX = -STEP_GAP                              // horizontal centre of the five steps
 export const STEP_LABELS = ['Leader signs a signal', 'Solana devnet records it publicly', 'Your copier verifies the signer', 'Your rules approve or reject', 'Your audit log keeps the proof']
 const SP = 2.1 // block spacing
 const BW = 1.5, BH = 1.05, BD = 0.85
@@ -367,8 +370,8 @@ function World({ host, variant, store }: { host: React.RefObject<HTMLDivElement 
     let look: [number, number, number]
     if (variant === 'hero') {
       const tt = now / 1000
-      tmpV.set(-4.5 + Math.sin(tt * 0.06) * 1.6, 3.4 + Math.sin(tt * 0.045) * 0.4, Math.max(22, 62 / Math.min(aspect, 3.2)))
-      look = [-3.5, -0.2, 0]
+      tmpV.set(HERO_CX + Math.sin(tt * 0.06) * 0.8, 3.0 + Math.sin(tt * 0.045) * 0.3, Math.max(24, 80 / Math.min(aspect, 3.4)))   // centred on the five steps; slow drift only
+      look = [HERO_CX, -0.3, 0]
     } else if (variant === 'medium') {
       tmpV.set(-4.5, 2.7, 16 * wide)
       look = [0.9, -0.2, -2.2]
