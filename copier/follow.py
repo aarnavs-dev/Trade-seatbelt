@@ -10,13 +10,15 @@ from copier.config import FollowerConfig
 from copier.copier import Copier
 from copier.feed import read_local
 from copier.ledger import CopierLog
+from copier.pace import from_manifest as pace_from_manifest
 from sim.runfiles import read_json, write_json_atomic
 
 
-def run_follower(run_dir, port, *, pace_ms=0) -> dict:
+def run_follower(run_dir, port, *, pace_ms=0, sleep=time.sleep) -> dict:
     """Process the whole feed.jsonl of `run_dir` against the gate on `port`. Safe to run again after a crash: every
     order id is derived from its signal id (the gate answers a repeat with the original decision) and copier.log
-    keeps only lines it has not got yet. `pace_ms` is a test hook that sleeps between signals."""
+    keeps only lines it has not got yet. Waiting between signals (the manifest's seeded pace, or the `pace_ms` test hook)
+    changes timing only."""
     d = Path(run_dir)
     m = read_json(d / "manifest.json")
     from core.rules import load_rules
@@ -25,10 +27,15 @@ def run_follower(run_dir, port, *, pace_ms=0) -> dict:
     log, client = CopierLog(d / "copier.log"), GateClient(port)
     try:
         cp = Copier(cfg, rules.symbols, client.submit, log)
-        for inc in read_local(d / "feed.jsonl"):
+        pace = pace_from_manifest(m.get("pace"))
+        for i, inc in enumerate(read_local(d / "feed.jsonl")):
             cp.process(inc)
-            if pace_ms:
-                time.sleep(pace_ms / 1000)
+            if cp.session_end:
+                break
+            if pace:
+                sleep(pace.delay(i))
+            elif pace_ms:
+                sleep(pace_ms / 1000)
         summary = cp.summary()
     finally:
         client.close()

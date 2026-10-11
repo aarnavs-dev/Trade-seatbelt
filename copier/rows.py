@@ -41,6 +41,14 @@ def build_rows(run_dir) -> tuple[list[dict], int, int]:
         L = ledger.read(d / "copier.log")
     except ledger.LedgerError:
         L = []
+    plain = {}
+    if any(e.decision == "REJECT" for e in events.values()):     # plain-English reason for rejected rows (same text as the explanation)
+        from auditor.explain import explain_events
+        from core.rules import load_rules
+        try:
+            plain = {x["seq"]: x["detail"] for x in explain_events(list(events.values()), load_rules(d / "rules.yaml"))}
+        except (OSError, ValueError):
+            plain = {}
     p, seen, rows = 0, set(), []
     for n, inc in enumerate(feed, 1):
         raw = inc.raw if isinstance(inc.raw, dict) else {}
@@ -64,7 +72,7 @@ def build_rows(run_dir) -> tuple[list[dict], int, int]:
         row = {"n": n, "signal_id": sid, "leader": inc.signer, "symbol": raw.get("symbol") if ok else None,
                "side": raw.get("side") if ok else None, "leader_qty": raw.get("qty") if ok else None,
                "qty": raw.get("qty") if ok else None, "price": raw.get("ref_price") if ok else None,
-               "leader_ts": raw.get("leader_ts") if ok else None, "tx": inc.tx,
+               "leader_ts": raw.get("leader_ts") if ok else None, "tx": inc.tx, "slot": inc.slot,
                "explorer_url": EXPLORER.format(inc.tx) if inc.tx else None,
                "gate_seq": None, "ledger_seq": None, "leader_signal": inc.raw if isinstance(inc.raw, dict) else None}
         if l and l["reason_code"] != CLIPPED:
@@ -76,7 +84,7 @@ def build_rows(run_dir) -> tuple[list[dict], int, int]:
                 return rows, len(feed), len(L)
             row.update(qty=ev.qty, price=ev.price, gate_seq=ev.seq)
             if ev.decision == "REJECT":
-                row.update(status=REJECTED, reason_code=ev.reason_code, reason_text=ev.reason_text)
+                row.update(status=REJECTED, reason_code=ev.reason_code, reason_text=plain.get(ev.seq, ev.reason_text))
             elif clip:
                 row.update(status=CLIP, reason_code=CLIPPED, reason_text=clip["reason_text"], ledger_seq=clip["seq"])
             else:

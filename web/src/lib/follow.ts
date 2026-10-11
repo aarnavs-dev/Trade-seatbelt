@@ -1,9 +1,9 @@
-import { ApiError } from './api'
-
-const BASE = '/api'
+import { API_BASE, call, json } from './api'
 
 export type Status = 'COPIED' | 'STOPPED_BY_COPIER' | 'REJECTED_BY_RULES' | 'CLIPPED'
-export type LeaderName = 'orb' | 'momentum' | 'meanrev'
+export type Feed = 'auto' | 'chain' | 'local'
+export type Pace = 'relaxed' | 'normal' | 'fast'
+export type CopyMode = 'same' | 'percent' | 'fixed'
 
 export interface Row {
   n: number
@@ -18,6 +18,8 @@ export interface Row {
   status: Status
   reason_code: string
   reason_text: string
+  tx: string | null
+  slot: number | null
   explorer_url: string | null
 }
 
@@ -27,23 +29,19 @@ export interface Summary {
   total_in_feed: number
   seen: number
   copied: number
-  clipped: number
   stopped: number
-  stopped_by_reason: Record<string, number>
   rejected: number
-  rejected_by_reason: Record<string, number>
   notes: string[]
   data_label: string | null
-  data: { label: string; session: string; provider: string; fallback_reason: string | null }
-  feed: { source: string; badge: string; why?: string }
-  limits: { max_position_per_symbol: number; max_daily_loss: number; price_band_pct: number; cooldown_after_losses: number }
+  feed: { source: string; badge: string }
+  session_limit: { code: string; text: string } | null
+  pace: { name: string; seed: number | null } | null
 }
 
 export interface Explanation {
   n: number
   status: Status
   signal_id: string
-  reason_code: string
   order: string | null
   rule: string | null
   protects_against: string | null
@@ -56,49 +54,56 @@ export interface Explanation {
   explorer_url: string | null
 }
 
-/** The four editable limits, in the units the person sees (dollars, percent, losses). */
-export interface Limits {
-  maxPosition: string
-  maxLossDollars: string
-  bandPct: string
-  cooldownLosses: string
+export interface Leader { id: string; name: string; about: string; public_key: string | null; explorer_url: string | null }
+
+export const STATUS: Record<Status, { label: string; dot: string }> = {
+  COPIED: { label: 'Copied', dot: 'dot-ok' },
+  STOPPED_BY_COPIER: { label: 'Stopped by copier', dot: 'dot-warn' },
+  REJECTED_BY_RULES: { label: 'Rejected by your rules', dot: 'dot-bad' },
+  CLIPPED: { label: 'Clipped', dot: 'dot-off' },
 }
 
-export const DEFAULT_LIMITS: Limits = { maxPosition: '100', maxLossDollars: '50', bandPct: '5', cooldownLosses: '3' }
+export const FILTERS: { key: 'ALL' | Status; label: string }[] = [
+  { key: 'ALL', label: 'All' }, { key: 'COPIED', label: 'Copied' }, { key: 'STOPPED_BY_COPIER', label: 'Stopped' },
+  { key: 'REJECTED_BY_RULES', label: 'Rejected' }, { key: 'CLIPPED', label: 'Clipped' },
+]
 
-/** Dollars text -> integer cents without floats ("12.5" -> 1250). Returns null for anything that is not a plain amount. */
+export const PACES: { key: Pace; label: string; about: string }[] = [
+  { key: 'relaxed', label: 'Relaxed', about: 'about 4 to 8 seconds between signals' },
+  { key: 'normal', label: 'Normal', about: 'about 2 to 4 seconds between signals' },
+  { key: 'fast', label: 'Fast', about: 'under a second between signals' },
+]
+
+export interface Options {
+  feed: Feed
+  leader: string
+  pace: Pace
+  copyMode: CopyMode
+  copyValue: string
+  maxTrades: string
+  maxVolume: string
+  maxTotalDollars: string
+  maxTradeDollars: string
+}
+
+export const DEFAULT_OPTIONS: Options = { feed: 'auto', leader: 'momentum', pace: 'normal', copyMode: 'same', copyValue: '', maxTrades: '', maxVolume: '', maxTotalDollars: '', maxTradeDollars: '' }
+
+/** "12.5" -> 1250 cents without floats; null if it is not a plain amount with at most two decimals. */
 export function dollarsToCents(s: string): number | null {
   const m = /^\s*(\d+)(?:\.(\d{1,2}))?\s*$/.exec(s)
   return m ? Number(m[1]) * 100 + Number((m[2] ?? '').padEnd(2, '0') || '0') : null
 }
 
-/** Page fields -> the API's `limits` object. Anything that is not a whole number is sent as typed so the API's own error shows. */
-export function toApiLimits(l: Limits): Record<string, unknown> {
-  const num = (s: string) => (/^\s*-?\d+\s*$/.test(s) ? Number(s) : s)
-  const cents = dollarsToCents(l.maxLossDollars)
-  return {
-    max_position_per_symbol: num(l.maxPosition),
-    max_daily_loss: cents ?? l.maxLossDollars,
-    price_band_pct: num(l.bandPct),
-    loss_streak_cooldown: { losses: num(l.cooldownLosses) },
-  }
-}
+/** A blank field means "no limit"; anything else is sent as typed (numbers when whole) so the API's own message can explain it. */
+const whole = (s: string): number | string | undefined => (s.trim() === '' ? undefined : /^\s*-?\d+\s*$/.test(s) ? Number(s) : s)
+const cents = (s: string): number | string | undefined => (s.trim() === '' ? undefined : (dollarsToCents(s) ?? s))
 
-export function limitsFromSummary(s: Summary['limits']): Limits {
-  return { maxPosition: String(s.max_position_per_symbol), maxLossDollars: (s.max_daily_loss / 100).toFixed(2), bandPct: String(s.price_band_pct), cooldownLosses: String(s.cooldown_after_losses) }
-}
-
-export const STATUS: Record<Status, { label: string; chip: string }> = {
-  COPIED: { label: 'COPIED', chip: 'border-[#4ade80]/40 text-[#4ade80]' },
-  STOPPED_BY_COPIER: { label: 'STOPPED BY COPIER', chip: 'border-[#fbbf24]/40 text-[#fbbf24]' },
-  REJECTED_BY_RULES: { label: 'REJECTED BY YOUR RULES', chip: 'border-reject/40 text-reject' },
-  CLIPPED: { label: 'CLIPPED', chip: 'border-line-2 text-ink-2' },
-}
-
-export const LEADERS: Record<LeaderName, { name: string; about: string }> = {
-  momentum: { name: 'Momentum', about: 'Buys when the price has risen at least 0.30% over the last hour, and sells after a 0.15% fall.' },
-  orb: { name: 'Opening range', about: 'Buys when the price breaks above the first 30 minutes of the day, and sells if it drops below that range or at the close.' },
-  meanrev: { name: 'Mean reversion', about: 'Buys when the price is 0.40% under its recent average, and sells when it is back at the average.' },
+export function toRequest(o: Options) {
+  const size = o.copyMode === 'same' ? { mode: 'same' } : { mode: o.copyMode, value: whole(o.copyValue) }
+  const session = Object.fromEntries(Object.entries({
+    max_trades: whole(o.maxTrades), max_volume: whole(o.maxVolume), max_total_amount: cents(o.maxTotalDollars), max_trade_amount: cents(o.maxTradeDollars),
+  }).filter(([, v]) => v !== undefined))
+  return { feed: o.feed, leader: o.leader, pace: o.pace, size, session }
 }
 
 /** New York wall-clock time of a signal, e.g. "10:35". */
@@ -107,38 +112,13 @@ export function nyTime(ms: number | null): string {
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms))
 }
 
-export const FILTERS: { key: 'ALL' | Status; label: string }[] = [
-  { key: 'ALL', label: 'All' }, { key: 'COPIED', label: 'Copied' }, { key: 'STOPPED_BY_COPIER', label: 'Stopped' },
-  { key: 'REJECTED_BY_RULES', label: 'Rejected' }, { key: 'CLIPPED', label: 'Clipped' },
-]
-
-export function errorText(status: number, body: unknown): string {
-  const b = body as { message?: string; detail?: unknown } | null
-  if (b?.message) return b.message
-  if (Array.isArray(b?.detail)) return String((b!.detail as { msg?: string }[])[0]?.msg ?? 'invalid request')
-  if (status === 0 || (status >= 500 && !b)) return 'API not reachable on 127.0.0.1:8000. Start it with `make api`.'
-  return `HTTP ${status}`
-}
-
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  let res: Response
-  try {
-    res = await fetch(BASE + path, init)
-  } catch {
-    throw new ApiError(0, null, errorText(0, null))
-  }
-  const text = await res.text()
-  let body: unknown = null
-  try { body = text ? JSON.parse(text) : null } catch { /* proxy error pages are not JSON */ }
-  if (!res.ok) throw new ApiError(res.status, body as never, errorText(res.status, body))
-  return body as T
-}
+export const shortKey = (k: string) => `${k.slice(0, 4)}…${k.slice(-4)}`
 
 export const follow = {
-  start: (feed: 'local' | 'chain', leader: LeaderName, limits: Record<string, unknown>) =>
-    call<{ run: string }>('/follow/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ feed, leader, limits }) }),
+  leaders: () => call<{ leaders: Leader[]; note: string }>('/follow/leaders'),
+  start: (o: Options) => call<{ run: string }>('/follow/run', json('POST', toRequest(o))),
   stop: (run: string) => call<{ stopped: boolean }>(`/follow/${run}/stop`, { method: 'POST' }),
   summary: (run: string) => call<Summary>(`/follow/${run}/summary`),
   explain: (run: string, n: number) => call<Explanation>(`/follow/${run}/explain/${n}`),
-  streamUrl: (run: string) => `${BASE}/follow/${run}/stream`,
+  streamUrl: (run: string) => `${API_BASE}/follow/${run}/stream`,
 }

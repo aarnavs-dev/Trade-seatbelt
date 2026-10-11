@@ -552,8 +552,8 @@ def fake_chain(monkeypatch, result):
     return cm
 
 
-def run_cli(cm, tmp_path, *extra):
-    return cm.main(["follow", "--feed", "chain", "--leader-address", LEADER_KEY, "--offline", "--runs-dir", str(tmp_path / "r"),
+def run_cli(cm, tmp_path, *extra, feed="auto"):
+    return cm.main(["follow", "--feed", feed, "--leader-address", LEADER_KEY, "--offline", "--runs-dir", str(tmp_path / "r"),
                     "--scale", "1/1", "--drawdown-stop", "1000000", *extra])
 
 
@@ -593,3 +593,95 @@ def test_chain_failure_falls_back_to_the_cache_then_the_local_feed_and_says_so(t
     m = orjson.loads((d / "manifest.json").read_bytes())
     assert m["feed"]["source"] == "local feed" and m["feed"]["requested"] == "chain" and m["follower"]["allowlist"] == ["local"]
     assert sum(1 for _ in scan(d / "gate.log")) > 0
+
+
+def test_feed_chain_is_strict_and_auto_falls_back(tmp_path, monkeypatch, capsys):
+    from leaders.feed import FeedResult
+    cm = fake_chain(monkeypatch, FeedResult([], "unavailable", [], ["network failure (rpc answered HTTP 429); no usable cache"]))
+    assert run_cli(cm, tmp_path, feed="chain") == 3
+    assert "unavailable" in capsys.readouterr().err and not (tmp_path / "r").exists()          # nothing was started
+    assert run_cli(cm, tmp_path, feed="auto") == 0 and "source: local feed" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------ session limits, copy size, pace
+def run_limits(items, **cfg):
+    fake, sk = Fake(), Skips()
+    sk.append = lambda sid, code, text: sk.lines.append((sid, code, text))
+    cp = Copier(FollowerConfig(scale_num=1, scale_den=1, **cfg), ("AAPL", "MSFT"), fake, sk)
+    cp.run(items)
+    return cp, fake, sk.lines
+
+
+def test_per_trade_amount_limit_skips_one_order_and_the_session_goes_on():
+    items = [inc(1, qty=10, price=20000), inc(2, qty=2, price=20000), inc(3, qty=3, price=20000)]   # $2,000 / $400 / $600
+    cp, fake, lines = run_limits(items, max_trade_amount=50_000)
+    assert [(l[1]) for l in lines] == ["PER_TRADE_AMOUNT_LIMIT"] * 2 and "$2,000.00, over your limit of $500.00 per trade" in lines[0][2]
+    assert [o["qty"] for o in fake.orders] == [2] and cp.session_end is None                  # the $600 order is skipped too; the session goes on
+
+
+@pytest.mark.parametrize("cfg,code,sent,why", [
+    ({"max_trades": 2}, "SESSION_TRADE_LIMIT", [1, 2], "maximum of 2 trades and 2 have been copied"),
+    ({"max_volume": 7}, "SESSION_VOLUME_LIMIT", [3, 4], "bring the total to 9 shares; your maximum is 7"),
+    ({"max_total_amount": 150_000}, "SESSION_BUDGET_LIMIT", [3, 4], "bring the total to $1,800.00, over your maximum of $1,500.00"),
+])
+def test_each_session_limit_stops_that_order_and_finishes_the_session(cfg, code, sent, why):
+    # buys of 3, 4, 2, 5 shares at $200 (the 5th signal must never be looked at once the session has ended)
+    items = [inc(1, qty=3, price=20000), inc(2, qty=4, price=20000), inc(3, qty=2, price=20000), inc(4, qty=5, price=20000), inc(5, qty=1)]
+    cp, fake, lines = run_limits(items, **cfg)
+    assert [o["qty"] for o in fake.orders] == [3, 4]
+    assert [l[1] for l in lines] == [code] and why in lines[0][2]
+    assert cp.session_end["code"] == code and cp.summary()["seen"] == 3        # stopped at the third signal: later ones never processed
+
+
+def test_session_limits_never_block_a_closing_order_but_count_it():
+    items = [inc(1, qty=4), inc(2, side="SELL", qty=4), inc(3, qty=4)]
+    cp, fake, lines = run_limits(items, max_trades=2)
+    assert [(o["side"], o["qty"]) for o in fake.orders] == [("BUY", 4), ("SELL", 4)]       # the close went through
+    assert [l[1] for l in lines] == ["SESSION_TRADE_LIMIT"]                                  # the next new risk is the one that stops
+
+
+def test_fixed_qty_and_percent_copy_sizes():
+    cp, fake, _ = run_limits([inc(1, qty=10), inc(2, qty=3)], fixed_qty=7)
+    assert [o["qty"] for o in fake.orders] == [7, 7]
+    fake, sk = Fake(), Skips()
+    Copier(FollowerConfig(scale_num=150, scale_den=100), ("AAPL",), fake, sk).run([inc(1, qty=10), inc(2, qty=3)])
+    assert [o["qty"] for o in fake.orders] == [15, 4]                                         # floor(3 * 1.5) = 4
+
+
+def test_session_limit_end_to_end_is_in_the_summary_and_the_explanation(tmp_path):
+    cfg = FollowerConfig(scale_num=1, scale_den=1, leader_drawdown_stop=10**6, max_trades=2)
+    d = fixture_run(tmp_path, cfg=cfg)
+    rows = [sigd(n, symbol="AAPL", qty=2, price=20000 + n) for n in (1, 2, 3, 4)]
+    (d / "feed.jsonl").write_bytes(b"".join(orjson.dumps({"signal": r}) + b"\n" for r in rows))
+    with ThreadGate(load_rules(d / "rules.yaml"), d / "gate.log") as g:
+        s = run_follower(d, g.port)
+    assert s["session_end"]["code"] == "SESSION_TRADE_LIMIT" and s["seen"] == 3 and s["sent"] == 2
+    (e,) = explain_copier_log(d / "copier.log")
+    assert e["reason_code"] == "SESSION_TRADE_LIMIT" and "copying more trades in one session" in e["protects_against"]
+    again = None
+    with ThreadGate(load_rules(d / "rules.yaml"), d / "gate2.log") as g:                       # restart on the same ledger: identical
+        again = run_follower(d, g.port)
+    assert again["session_end"] == s["session_end"] and len(ledger.read(d / "copier.log")) == 1
+
+
+def test_pace_changes_timing_only(tmp_path):
+    from copier.pace import Pace, RANGES
+    for name, (lo, hi) in RANGES.items():
+        ds = [Pace(name, 7).delay(i) for i in range(200)]
+        assert all(lo <= x <= hi for x in ds) and len(set(ds)) > 100 and ds == [Pace(name, 7).delay(i) for i in range(200)]
+        assert ds != [Pace(name, 8).delay(i) for i in range(200)]
+    assert 2.0 <= min(Pace("normal", 1).delay(i) for i in range(50)) and max(Pace("normal", 1).delay(i) for i in range(50)) <= 4.0
+    outs, waits = [], {}
+    for name in ("relaxed", "normal", "fast", None):
+        d = fixture_run(tmp_path, name=f"p-{name}", overrides={"max_daily_loss": 300})
+        m = orjson.loads((d / "manifest.json").read_bytes())
+        m["pace"] = {"name": name, "seed": 5} if name else {"name": "off", "seed": None}
+        (d / "manifest.json").write_bytes(orjson.dumps(m))
+        slept = []
+        with ThreadGate(load_rules(d / "rules.yaml"), d / "gate.log") as g:
+            run_follower(d, g.port, sleep=slept.append)                 # an injected clock: nothing really waits
+        waits[name] = slept
+        outs.append(((d / "gate.log").read_bytes(), (d / "copier.log").read_bytes()))
+    assert all(o == outs[0] for o in outs)                              # identical decisions at every pace
+    assert waits[None] == [] and len(waits["normal"]) > 0 and all(2.0 <= x <= 4.0 for x in waits["normal"])
+    assert sum(waits["relaxed"]) > sum(waits["normal"]) > sum(waits["fast"])

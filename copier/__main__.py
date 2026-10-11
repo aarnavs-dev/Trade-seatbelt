@@ -3,6 +3,8 @@
 
 import argparse
 import sys
+import os
+
 import orjson
 
 from auditor.explain import explain_copier_log, explain_log, render
@@ -11,6 +13,7 @@ from pathlib import Path
 from copier import data as datamod
 from copier.config import ConfigError, FollowerConfig, parse_override_args
 from copier.feed import write_feed
+from copier.pace import NAMES as PACE_NAMES, Pace
 from copier.follow import run_follower, write_status
 from copier.run import ROOT, create_follow_run, start_gate, stop_gate
 from core.money import fmt
@@ -59,21 +62,27 @@ def cmd_follow(a, out=print) -> int:
     if a.announce:      # the API runs this as a subprocess: stop cleanly (stop the gate) when it is terminated
         import signal as _signal
         _signal.signal(_signal.SIGTERM, lambda *_: sys.exit(143))
-    if a.feed == "chain":
+    if a.feed in ("chain", "auto"):
         chain_items, feed_info, chain_allow = read_chain(a, out)
         allow = chain_allow or allow
+        if a.feed == "chain" and chain_items is None:       # strict: no silent fallback
+            print(f"error: the chain feed is unavailable ({feed_info.get('why')}); nothing was started", file=sys.stderr)
+            return 3
     try:
         overrides = parse_override_args(a.limit)
         num, _, den = a.scale.partition("/")
         cfg = FollowerConfig(allowlist=allow, max_age_ms=a.max_age_ms, delay_ms=a.delay_ms,
-                             scale_num=int(num), scale_den=int(den or 1), leader_drawdown_stop=a.drawdown_stop, allow_short=a.allow_short)
+                             scale_num=int(num), scale_den=int(den or 1), leader_drawdown_stop=a.drawdown_stop, allow_short=a.allow_short, fixed_qty=a.fixed_qty,
+                             max_trades=a.max_trades, max_volume=a.max_volume, max_total_amount=a.max_total_amount,
+                             max_trade_amount=a.max_trade_amount)
     except (ConfigError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
+    pace = None if a.pace == "off" else Pace(a.pace, a.pace_seed if a.pace_seed is not None else int.from_bytes(os.urandom(6), "big"))
     day = ny_date(min(i.signal.data_ts for i in chain_items) - 1) if chain_items else None
     data = datamod.load(a.symbols, offline=a.offline, day=day)
     run_dir = create_follow_run(a.runs_dir, base_rules=a.rules, data=data, cfg=cfg, overrides=overrides,
-                                leader=a.leader, leader_qty=a.qty, feed=feed_info)
+                                leader=a.leader, leader_qty=a.qty, feed=feed_info, pace=pace.to_dict() if pace else None)
     if a.announce:
         print(f"RUN {run_dir.name}", flush=True)
     if chain_items:
@@ -118,6 +127,8 @@ def cmd_follow(a, out=print) -> int:
             ("clipped to long position", summary["clipped"]),
             ("stopped by the copier", f"{stopped}  ({_by(summary['skipped'])})"),
             ("rejected by the rules", f"{rej}  ({_by(summary['rejected'])})")], out)
+    if summary.get("session_end"):
+        out(f"  {summary['session_end']['text']}  The session finished here.")
     exps = explain_log(run_dir / "gate.log", rules)
     seen, picks = set(), []
     for e in exps:
@@ -142,8 +153,15 @@ def main(argv=None) -> int:
     f.add_argument("--symbols", nargs="+", default=list(SYMBOLS))
     f.add_argument("--qty", type=int, default=10, help="the leader's qty per signal")
     f.add_argument("--scale", default="1/2", help="follower qty = leader qty * num/den, rounded down")
-    f.add_argument("--feed", choices=("local", "chain"), default="local",
-                   help="chain: read the leader's signals from devnet (falls back to the cache, then to a local feed)")
+    f.add_argument("--feed", choices=("local", "chain", "auto"), default="local",
+                   help="chain: the leader's signals from devnet, or fail; auto: devnet, falling back to the cache and then a local feed (and saying so)")
+    f.add_argument("--fixed-qty", type=int, help="copy this many shares per trade instead of scaling")
+    f.add_argument("--max-trades", type=int, help="session limit: trades the gate accepted")
+    f.add_argument("--max-volume", type=int, help="session limit: total shares")
+    f.add_argument("--max-total-amount", type=int, help="session limit: total cents")
+    f.add_argument("--max-trade-amount", type=int, help="limit per trade, cents")
+    f.add_argument("--pace", choices=PACE_NAMES, default="off", help="seeded wait between signals; changes timing only")
+    f.add_argument("--pace-seed", type=int)
     f.add_argument("--leader-address", help="the leader's public key for --feed chain (default: from LEADER_KEYPAIR_PATH)")
     f.add_argument("--announce", action="store_true", help="print 'RUN <id>' once the run exists (used by the API)")
     f.add_argument("--pace-ms", type=int, default=0, help="sleep between signals so a UI can show the feed live")

@@ -64,101 +64,41 @@ Alpaca Market Data is used only if `ALPACA_KEY_ID` and `ALPACA_SECRET_KEY` are s
 the code has no order endpoint, and the keys are never logged or written to a run directory. The Alpaca path has only been tested against a fake
 HTTP client, never against the live service.
 
-**Front end (`web/`, npm).** Versions and licenses below are read from `web/package.json` and from each installed package's own `package.json` (`license` field) in `web/node_modules`, resolved by `npm ls --all`; nothing is from memory.
+**Front end (`web/`, npm).** Versions and licenses are read from `web/package.json` and each installed package's own `package.json`
+(`license` field) in `web/node_modules`. The 3D scene and everything that only it needed were removed in the UI rebuild: `three`,
+`@react-three/fiber`, `@react-three/drei`, `framer-motion`, `@types/three`, `tailwindcss` and `@tailwindcss/vite` (and their transitive packages).
+The pages are plain CSS on design tokens (CSS variables), React and TypeScript.
 
-Direct runtime dependencies:
+Runtime dependencies (they ship to the browser):
 
 | Package | Version | Used for | License per package.json |
 |---|---|---|---|
-| @fontsource-variable/inter | 5.3.0 | UI typeface, bundled (no network fonts) | OFL-1.1 |
-| @fontsource-variable/jetbrains-mono | 5.3.0 | monospace for numbers and hashes, bundled | OFL-1.1 |
-| @react-three/drei | 10.7.9 | helpers; only `PerformanceMonitor` is imported | MIT |
-| @react-three/fiber | 9.8.1 | React renderer for three.js | MIT |
-| @types/react | 19.3.0 |  | MIT |
-| @types/three | 0.186.0 |  | MIT |
-| framer-motion | 14.1.0 | panel/drawer motion (LazyMotion, `domAnimation`) | MIT |
+| @fontsource-variable/newsreader | 5.3.0 | headline serif (Newsreader, Production Type), bundled | OFL-1.1 |
+| @fontsource-variable/inter | 5.3.0 | UI sans (Inter, Rasmus Andersson), bundled | OFL-1.1 |
+| @fontsource-variable/jetbrains-mono | 5.3.0 | monospace for numbers, hashes and addresses (JetBrains Mono), bundled | OFL-1.1 |
 | react | 19.3.0 | UI | MIT |
 | react-dom | 19.3.0 | UI | MIT |
-| three | 0.186.1 | 3D rendering (lazy chunk) | MIT |
-| three | 0.170.0 | 3D rendering (lazy chunk) | MIT |
 
-Direct development dependencies (build, test and the Playwright check; none ships to the browser):
+All three fonts are self-hosted from the bundle (Fontsource packages), so no page makes a request to a font CDN. Each font is licensed
+under the SIL Open Font License 1.1, which allows bundling and redistribution; the license text is in each package's `LICENSE` file.
+`scheduler` (MIT) is the only transitive runtime package (a dependency of React).
+
+Development dependencies (build, test and the Playwright check; none ships to the browser):
 
 | Package | Version | License per package.json |
 |---|---|---|
-| @tailwindcss/vite | 4.3.3 | MIT |
 | @types/node | 26.6.5 | MIT |
+| @types/react | 19.3.0 | MIT |
 | @types/react-dom | 19.3.0 | MIT |
 | @vitejs/plugin-react | 6.1.2 | MIT |
 | playwright | 1.64.0 | Apache-2.0 |
-| tailwindcss | 4.3.3 | MIT |
 | typescript | 7.0.2 | Apache-2.0 |
 | vite | 8.3.4 | MIT |
 | vitest | 4.1.11 | MIT |
 
-The 65 further development-only packages installed beneath those (read the same way): MIT 52, Apache-2.0 5, MPL-2.0 4, ISC 3, BSD-3-Clause 1. Platform-specific optional binaries that npm did not install on this machine were not checked.
-
-Transitive runtime packages (55, installed as dependencies of the ones above; `@react-three/drei` brings most of them and the production bundle tree-shakes the unused parts out):
-
-| Package | Version | License per package.json |
-|---|---|---|
-| @babel/runtime | 7.29.10 | MIT |
-| @mediapipe/tasks-vision | 0.10.17 | Apache-2.0 |
-| @monogrid/gainmap-js | 3.4.0 | MIT |
-| @types/draco3d | 1.4.10 | MIT |
-| @types/offscreencanvas | 2019.7.3 | MIT |
-| @types/react-reconciler | 0.28.9 | MIT |
-| @types/webxr | 0.5.24 | MIT |
-| @use-gesture/core | 10.3.1 | MIT |
-| @use-gesture/react | 10.3.1 | MIT |
-| base64-js | 1.5.1 | MIT |
-| bidi-js | 1.1.0 | MIT |
-| buffer | 6.0.3 | MIT |
-| camera-controls | 3.1.0 | MIT |
-| cross-env | 7.0.3 | MIT |
-| cross-spawn | 7.0.6 | MIT |
-| detect-gpu | 5.0.70 | MIT |
-| draco3d | 1.5.7 | Apache-2.0 |
-| fflate | 0.6.11 | MIT |
-| glsl-noise | 0.0.0 | MIT |
-| hls.js | 1.7.3 | Apache-2.0 |
-| ieee754 | 1.2.1 | BSD-3-Clause |
-| immediate | 3.0.6 | MIT |
-| is-promise | 2.2.2 | MIT |
-| isexe | 2.0.0 | ISC |
-| its-fine | 2.1.1 | MIT |
-| lie | 3.3.0 | MIT |
-| maath | 0.10.8 | MIT |
-| meshline | 3.3.1 | MIT |
-| motion-dom | 14.1.0 | MIT |
-| motion-utils | 14.1.0 | MIT |
-| path-key | 3.1.1 | MIT |
-| potpack | 1.0.2 | ISC |
-| promise-worker-transferable | 1.0.4 | Apache-2.0 |
-| react-use-measure | 2.1.7 | MIT |
-| require-from-string | 2.0.2 | MIT |
-| scheduler | 0.28.0 | MIT |
-| shebang-command | 2.0.0 | MIT |
-| shebang-regex | 3.0.0 | MIT |
-| stats-gl | 2.4.2 | MIT |
-| stats.js | 0.17.0 | MIT |
-| suspend-react | 0.1.3 | MIT |
-| three-mesh-bvh | 0.8.3 | MIT |
-| three-stdlib | 2.36.1 | MIT |
-| troika-three-text | 0.52.5 | MIT |
-| troika-three-utils | 0.52.5 | MIT |
-| troika-worker-utils | 0.52.0 | MIT |
-| tslib | 2.8.1 | 0BSD |
-| tunnel-rat | 0.1.2 | MIT |
-| use-sync-external-store | 1.7.0 | MIT |
-| utility-types | 3.11.0 | MIT |
-| webgl-constants | 1.1.1 | MIT (LICENSE file; package.json has no `license` field) |
-| webgl-sdf-generator | 1.1.1 | MIT |
-| which | 2.0.2 | ISC |
-| zustand | 4.5.7 | MIT |
-| zustand | 5.0.15 | MIT |
-
-The fonts (Inter, JetBrains Mono) are OFL-1.1 and are served from the bundle, so the dashboard makes no request to a font CDN.
+The 47 further packages installed beneath those (development tooling; read the same way): MIT 40, Apache-2.0 4, ISC 2, BSD-3-Clause 1.
+Platform-specific optional binaries that npm does not install on every machine are not counted. The charting library for the
+dashboard (uPlot) is not installed yet; it is added with the dashboard page.
 
 Playwright's Chromium (downloaded by `npx playwright install chromium`) is used only for the screenshot check; its license was not read from metadata here.
 
@@ -178,7 +118,7 @@ setuptools is the build backend named in `pyproject.toml`; it is not installed i
 ## Not used
 
 No external API or service is called. The following are described in the project brief as optional extras and are
-**not built or integrated**: Gemini API, ElevenLabs, Tiger Data (TimescaleDB). (FastAPI and the React / three.js front end *are* built; see above.) The application runs fully offline and needs no keys; `.env.example` lists placeholders for them only.
+**not built or integrated**: Gemini API, ElevenLabs, Tiger Data (TimescaleDB). (FastAPI and the React front end *are* built; see above.) The application runs fully offline and needs no keys; `.env.example` lists placeholders for them only.
 
 ## Data
 
@@ -206,5 +146,9 @@ stored in the run manifest. Explanations are deterministic text built from the l
 keypair in `.keys/`, gitignored, secret never printed; writes refuse non-devnet URLs). `devnet-check` publishes 10 seeded,
 meaningless signals; they stay public on devnet. No new dependency.
 
-The `/app/follow` page and `api/follow.py` add no service, key or dependency: the API starts the local copier as a
+The `/follow` page and `api/follow.py` add no service, key or dependency: the API starts the local copier as a
 subprocess and reads the run's files. Explanations are deterministic text, not AI. Execution is paper only.
+
+The `/rules` page stores your four limits in a runtime profile file (`profile/rules.json`, gitignored); `/follow` adds session limits,
+copy sizing and a seeded pace, all local to the copier. The landing page's flow animation is plain CSS/SVG. Signals are published
+to Solana devnet (a test network); fills are paper. No AI is used anywhere in these pages.

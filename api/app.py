@@ -21,6 +21,7 @@ from api import invariants as inv_mod
 from api import tail
 from api.demo import DemoRunner
 from api.follow import Follows, build_router as build_follow_router
+from api.rules_profile import build_router as build_rules_router
 from api.runs import RunManager
 from api.runs_routes import build_router
 from api.sources import Sources
@@ -51,7 +52,8 @@ class Settings:
     invariants_md: Path = ROOT / "docs" / "INVARIANTS.md"
     junit: Path = ROOT / "out" / "pytest-junit.xml"
     sse_poll: float = 0.1
-    follow_pace_ms: int = 120     # delay between signals of a follow run so the page shows them arriving
+    profile: Path = ROOT / "profile" / "rules.json"       # your saved rules (runtime, gitignored)
+    follow_pace_override: str | None = None     # tests set "off"; the page's pace choice is used otherwise
     extra: dict = field(default_factory=dict)
 
 
@@ -79,7 +81,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     s = settings or Settings()
     sources = Sources(s.root, s.recon_log, s.default_demo_log)
     runs = RunManager(s.runs_dir, s.root, s.rules, **s.extra.get("run_manager", {}))
-    follows = Follows(s.runs_dir, s.root, s.rules, s.follow_pace_ms)
+    follows = Follows(s.runs_dir, s.root, s.rules, s.profile, s.follow_pace_override)
     demo = DemoRunner(s.root, s.rules, s.orders, on_log=lambda p: setattr(sources, "demo_log", p))
 
     @asynccontextmanager
@@ -99,6 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.runs = runs
     app.include_router(build_router(runs, s.sse_poll))
     app.include_router(build_follow_router(follows, s.sse_poll))
+    app.include_router(build_rules_router(s.profile, s.rules))
 
     @app.get("/health")
     def health():

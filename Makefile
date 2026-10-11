@@ -69,7 +69,7 @@ follow:
 # Same, but the leader's signals are read from Solana devnet (needs `make leaders-setup` and a published feed).
 # Falls back to the cached chain read, then to a local feed, and says which one was used.
 follow-chain:
-	$(PY) -m copier follow --feed chain $(FOLLOW_ARGS)
+	$(PY) -m copier follow --feed auto $(FOLLOW_ARGS)
 
 # Publish 10 seeded signals to devnet, read them back and compare with feed.jsonl. Devnet only; needs a funded keypair.
 devnet-check:

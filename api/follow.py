@@ -14,10 +14,11 @@ from typing import Any, Literal
 import orjson
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StrictInt
 from starlette.concurrency import run_in_threadpool
 
 from api import tail
+from api.rules_profile import read_profile
 from auditor.explain import explain_copier_log, explain_log
 from copier.config import ConfigError, validate_overrides
 from copier.rows import COPIED, CLIP, REJECTED, STOPPED, build_rows
@@ -29,12 +30,46 @@ START_TIMEOUT_S = 90.0
 FINAL_STATES = ("done", "failed", "stopped")
 
 
+class CopySize(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["same", "percent", "fixed"] = "same"
+    value: StrictInt | None = None                      # percent of the leader's size, or shares per trade
+
+
+class Session(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    max_trades: StrictInt | None = None                 # trades the gate accepted
+    max_volume: StrictInt | None = None                 # shares in total
+    max_total_amount: StrictInt | None = None           # cents in total
+    max_trade_amount: StrictInt | None = None           # cents per trade
+
+
 class NewFollow(BaseModel):
-    model_config = ConfigDict(extra="forbid")        # a stray "path", "rules" or "runs_dir" is a 422, never used
-    feed: Literal["local", "chain"] = "local"
+    """Options only. Your limits come from the saved rules profile, never from this request, and no path is accepted."""
+    model_config = ConfigDict(extra="forbid")
+    feed: Literal["auto", "chain", "local"] = "auto"
     leader: Literal["orb", "momentum", "meanrev"] = "momentum"
     data: Literal["auto", "fixture"] = "auto"
-    limits: dict[str, Any] | None = None             # checked by copier.config.validate_overrides (its message is shown to the user)
+    size: CopySize = CopySize()
+    session: Session = Session()
+    pace: Literal["relaxed", "normal", "fast"] = "normal"
+
+
+LEADERS = {
+    "momentum": ("Momentum", "Buys when the price has risen at least 0.30% over the last hour, and sells after a 0.15% fall."),
+    "orb": ("Opening range", "Buys when the price breaks above the first 30 minutes of the day, and sells if it drops below that range or at the close."),
+    "meanrev": ("Mean reversion", "Buys when the price is 0.40% under its recent average, and sells when it is back at the average."),
+}
+
+
+def leader_key() -> str | None:
+    """The demo leader's PUBLIC key (the secret is loaded to derive it and never returned or logged)."""
+    from leaders.__main__ import load_config
+    from leaders.solana import Keypair
+    try:
+        return Keypair.load(load_config()["keypair"]).address
+    except ValueError:
+        return None
 
 
 def _err(status: int, error: str, message: str, **extra) -> JSONResponse:
@@ -50,8 +85,9 @@ def _alive(pid) -> bool:
 
 
 class Follows:
-    def __init__(self, runs_dir, root, base_rules, pace_ms):
-        self.runs_dir, self.root, self.base_rules, self.pace_ms = Path(runs_dir), Path(root), Path(base_rules), pace_ms
+    def __init__(self, runs_dir, root, base_rules, profile_path, pace_override=None):
+        self.runs_dir, self.root, self.base_rules = Path(runs_dir), Path(root), Path(base_rules)
+        self.profile_path, self.pace_override = Path(profile_path), pace_override
         self.procs: dict[str, subprocess.Popen] = {}
 
     def dir(self, run_id) -> Path | None:
@@ -75,13 +111,29 @@ class Follows:
     def running(self) -> str | None:
         return next((i for i, p in self.procs.items() if p.poll() is None), None)
 
-    def start(self, body: NewFollow) -> str:
-        limits = validate_overrides(body.limits or {})
+    def start(self, body: NewFollow, limits: dict) -> str:
+        copy, ses = body.size, body.session
+        if copy.mode != "same" and (copy.value is None):
+            raise ConfigError(f"copy size: give a value for '{copy.mode}'")
+        if copy.mode == "percent" and not 1 <= copy.value <= 1000:
+            raise ConfigError("copy size: a percentage must be between 1 and 1000")
+        for name in ("max_trades", "max_volume", "max_total_amount", "max_trade_amount"):
+            v = getattr(ses, name)
+            if v is not None and v <= 0:
+                raise ConfigError(f"{name} must be a positive whole number")
         if (cur := self.running()) is not None:
             raise RuntimeError(cur)
         self.runs_dir.mkdir(parents=True, exist_ok=True)
+        pace = self.pace_override or body.pace
         cmd = [sys.executable, "-m", "copier", "follow", "--announce", "--feed", body.feed, "--leader", body.leader,
-               "--scale", "1/1", "--runs-dir", str(self.runs_dir), "--rules", str(self.base_rules), "--pace-ms", str(self.pace_ms)]
+               "--scale", f"{copy.value}/100" if copy.mode == "percent" else "1/1", "--runs-dir", str(self.runs_dir),
+               "--rules", str(self.base_rules), "--pace", pace]
+        if copy.mode == "fixed":
+            cmd += ["--fixed-qty", str(copy.value)]
+        for flag, v in (("--max-trades", ses.max_trades), ("--max-volume", ses.max_volume),
+                        ("--max-total-amount", ses.max_total_amount), ("--max-trade-amount", ses.max_trade_amount)):
+            if v is not None:
+                cmd += [flag, str(v)]
         for k, v in limits.items():
             for kk, vv in (v.items() if isinstance(v, dict) else [(None, v)]):
                 cmd += ["--limit", f"{k}.{kk}={vv}" if kk else f"{k}={vv}"]
@@ -152,7 +204,9 @@ def summarize(f: Follows, d: Path) -> dict:
         "clipped": sum(1 for r in rows if r["status"] == CLIP), "stopped": sum(stopped.values()), "stopped_by_reason": stopped,
         "rejected": sum(rejected.values()), "rejected_by_reason": rejected, "notes": notes,
         "data": data, "data_label": m.get("data_label"), "feed": feed, "leader": m.get("leader"), "follower": m.get("follower"),
-        "limit_overrides": m.get("limit_overrides", {}),
+        "limit_overrides": m.get("limit_overrides", {}), "pace": m.get("pace"), "copy": m.get("copy"),
+        "session_limit": (read_json(d / "follow.summary.json") or {}).get("session_end"),
+        "rules_sha256": m.get("rules_sha256"),
         "limits": {"max_position_per_symbol": rules.max_position_per_symbol, "max_daily_loss": rules.max_daily_loss,
                    "price_band_pct": rules.price_band_pct, "cooldown_after_losses": rules.loss_streak_cooldown.losses,
                    "cooldown_seconds": rules.loss_streak_cooldown.cooldown_seconds},
@@ -181,12 +235,24 @@ def build_router(f: Follows, sse_poll: float) -> APIRouter:
     def find(run_id):
         return f.dir(run_id)
 
+    @r.get("/leaders")
+    def leaders():
+        key = leader_key()
+        return {"leaders": [{"id": k, "name": n, "about": a, "public_key": key,
+                             "explorer_url": f"https://explorer.solana.com/address/{key}?cluster=devnet" if key else None}
+                            for k, (n, a) in LEADERS.items()],
+                "note": "These strategies are signed by one demo devnet key. On the chain source you follow whatever that key has published.",
+                "simulated": True}
+
     @r.post("/run", status_code=201)
     async def start(body: NewFollow):
+        prof = read_profile(f.profile_path)
+        if prof is None:
+            return _err(409, "rules_not_saved", "Save your rules first. A follow run only starts under limits you have chosen.")
         try:
-            run_id = await run_in_threadpool(f.start, body)
+            run_id = await run_in_threadpool(f.start, body, prof["limits"])
         except ConfigError as e:
-            return _err(422, "bad_limit", str(e))
+            return _err(422, "bad_option", str(e))
         except RunError as e:
             return _err(500, "start_failed", str(e))
         except RuntimeError as e:
@@ -240,7 +306,8 @@ def build_router(f: Follows, sse_poll: float) -> APIRouter:
                 if new:
                     idle = 0.0
                 if state in FINAL_STATES + ("interrupted",) and not new:
-                    yield tail.sse("end", {"state": state, "seen": len(rows), "total": total})
+                    yield tail.sse("end", {"state": state, "seen": len(rows), "total": total,
+                                           "session_limit": (read_json(d / "follow.summary.json") or {}).get("session_end")})
                     return
                 idle += sse_poll
                 if idle >= 15:

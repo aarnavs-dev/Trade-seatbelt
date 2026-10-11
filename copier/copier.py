@@ -3,8 +3,11 @@
   INVALID_SIGNAL, UNTRUSTED_LEADER, DUPLICATE_SIGNAL, UNKNOWN_SYMBOL, MARKET_CLOSED, STALE_SIGNAL, FEED_GAP,
   LEADER_DRAWDOWN_STOP, SELL_WITHOUT_POSITION
 
-then the leader's qty is scaled (SIZE_ROUNDS_TO_ZERO), a SELL is clipped to the follower's long position unless
-allow_short (the clip is recorded in copier.log as SIZE_CLIPPED, and the order is still sent), and the order goes to the gate with a client_order_id derived from
+then the leader's qty is scaled (SIZE_ROUNDS_TO_ZERO), or replaced by a fixed qty, a SELL is clipped to the follower's long
+position unless allow_short (the clip is recorded in copier.log as SIZE_CLIPPED, and the order is still sent), then the
+session limits are checked in this order: PER_TRADE_AMOUNT_LIMIT, SESSION_TRADE_LIMIT, SESSION_VOLUME_LIMIT,
+SESSION_BUDGET_LIMIT. They are counted on orders the gate ACCEPTED, apply only to orders that grow |position| (closing is
+never blocked), and the three SESSION_* limits also END the session: no later signal is processed. The order goes to the gate with a client_order_id derived from
 the signal id, so a replayed or restarted copier cannot double-submit (the gate returns the original decision).
 
 Everything the filters decide depends only on the feed, the config and the rules, never on the wall clock. The
@@ -17,11 +20,14 @@ from collections import Counter
 from copier.config import FollowerConfig
 from copier.feed import Incoming
 from core.ledger import Ledger
+from core.money import fmt
 from leaders.signal import SignalError, validate
 from marketdata.calendar import CalendarRangeError, ny_date, session_ms
 
 CODES = ("INVALID_SIGNAL", "UNTRUSTED_LEADER", "DUPLICATE_SIGNAL", "UNKNOWN_SYMBOL", "MARKET_CLOSED", "STALE_SIGNAL",
-         "FEED_GAP", "LEADER_DRAWDOWN_STOP", "SELL_WITHOUT_POSITION", "SIZE_ROUNDS_TO_ZERO")
+         "FEED_GAP", "LEADER_DRAWDOWN_STOP", "SELL_WITHOUT_POSITION", "SIZE_ROUNDS_TO_ZERO", "PER_TRADE_AMOUNT_LIMIT",
+         "SESSION_TRADE_LIMIT", "SESSION_VOLUME_LIMIT", "SESSION_BUDGET_LIMIT")
+SESSION_CODES = ("SESSION_TRADE_LIMIT", "SESSION_VOLUME_LIMIT", "SESSION_BUDGET_LIMIT")
 CLIPPED = "SIZE_CLIPPED"      # logged, not a skip: a smaller order was sent
 
 
@@ -72,11 +78,18 @@ class Copier:
         self.stats = {"seen": 0, "sent": 0, "accepted": 0, "resent": 0}
         self.skipped, self.rejected = Counter(), Counter()
         self.clipped = 0
+        self.accepted_trades = self.accepted_volume = self.accepted_amount = 0     # what the gate ACCEPTED, cents and shares
+        self.session_end: dict | None = None
 
     def _skip(self, signal_id, code, text):
         self.skipped[code] += 1
         self.skiplog.append(signal_id, code, text)
         return {"copied": False, "reason_code": code}
+
+    def _end(self, signal_id, code, text):
+        """A session limit: record the skip and finish the session (the caller stops feeding signals)."""
+        self.session_end = {"code": code, "text": text, "signal_id": signal_id}
+        return self._skip(signal_id, code, text)
 
     def process(self, inc: Incoming) -> dict:
         self.stats["seen"] += 1
@@ -119,7 +132,7 @@ class Copier:
         if sig.side == "SELL" and not cfg.allow_short and cur <= 0:
             return self._skip(sid, "SELL_WITHOUT_POSITION",
                               f"You don't hold {sig.symbol}, so there is nothing to sell (this follower never goes short).")
-        qty = scale_qty(sig.qty, cfg.scale_num, cfg.scale_den)
+        qty = cfg.fixed_qty or scale_qty(sig.qty, cfg.scale_num, cfg.scale_den)
         if qty > 0:
             delta = qty if sig.side == "BUY" else -qty
             if drawdown >= cfg.leader_drawdown_stop and abs(cur + delta) > abs(cur):
@@ -134,6 +147,21 @@ class Copier:
                                               f"share(s) you hold; a SELL of {cur} was sent.")
             self.clipped += 1
             qty = cur
+        grows = abs(cur + (qty if sig.side == "BUY" else -qty)) > abs(cur)
+        amount = qty * sig.ref_price
+        if grows:
+            if cfg.max_trade_amount and amount > cfg.max_trade_amount:
+                return self._skip(sid, "PER_TRADE_AMOUNT_LIMIT",
+                                  f"This order would cost {fmt(amount)}, over your limit of {fmt(cfg.max_trade_amount)} per trade.")
+            if cfg.max_trades and self.accepted_trades >= cfg.max_trades:
+                return self._end(sid, "SESSION_TRADE_LIMIT", f"Session limit reached: you set a maximum of {cfg.max_trades} trades "
+                                                             f"and {self.accepted_trades} have been copied.")
+            if cfg.max_volume and self.accepted_volume + qty > cfg.max_volume:
+                return self._end(sid, "SESSION_VOLUME_LIMIT", f"Session limit reached: this order would bring the total to "
+                                                              f"{self.accepted_volume + qty} shares; your maximum is {cfg.max_volume}.")
+            if cfg.max_total_amount and self.accepted_amount + amount > cfg.max_total_amount:
+                return self._end(sid, "SESSION_BUDGET_LIMIT", f"Session limit reached: this order would bring the total to "
+                                                              f"{fmt(self.accepted_amount + amount)}, over your maximum of {fmt(cfg.max_total_amount)}.")
         reply = self.submit({"client_order_id": order_id_for(sid), "symbol": sig.symbol, "side": sig.side,
                              "qty": qty, "price": sig.ref_price})
         if "error" in reply:
@@ -142,6 +170,9 @@ class Copier:
         self.stats["resent"] += bool(reply.get("duplicate"))
         if reply["decision"] == "ACCEPT":
             self.stats["accepted"] += 1
+            self.accepted_trades += 1
+            self.accepted_volume += qty
+            self.accepted_amount += qty * sig.ref_price
             self.pos[sig.symbol] = cur + (qty if sig.side == "BUY" else -qty)
         else:
             self.rejected[reply["reason_code"]] += 1
@@ -150,7 +181,9 @@ class Copier:
     def run(self, incoming) -> dict:
         for inc in incoming:
             self.process(inc)
+            if self.session_end:
+                break
         return self.summary()
 
     def summary(self) -> dict:
-        return {**self.stats, "clipped": self.clipped, "skipped": dict(sorted(self.skipped.items())), "rejected": dict(sorted(self.rejected.items()))}
+        return {**self.stats, "session_end": self.session_end, "clipped": self.clipped, "skipped": dict(sorted(self.skipped.items())), "rejected": dict(sorted(self.rejected.items()))}

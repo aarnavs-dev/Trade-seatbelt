@@ -18,8 +18,12 @@ from sim.runfiles import sha256_file  # noqa: E402
 from tests.test_copier import BASE, ThreadGate, fixture_run, sigd  # noqa: E402
 
 
-def make_client(tmp_path, pace=0):
-    return TestClient(create_app(Settings(runs_dir=tmp_path / "runs", sse_poll=0.01, follow_pace_ms=pace)))
+def make_client(tmp_path, pace="off"):
+    return TestClient(create_app(Settings(runs_dir=tmp_path / "runs", sse_poll=0.01, follow_pace_override=pace,
+                                          profile=tmp_path / "profile" / "rules.json")))
+
+
+BALANCED = {"max_position_per_symbol": 7, "max_daily_loss": 5000, "price_band_pct": 5, "loss_streak_cooldown": {"losses": 2, "cooldown_seconds": 300}}
 
 
 @pytest.fixture
@@ -78,6 +82,7 @@ def test_stream_maps_every_signal_to_its_status(tmp_path):
     assert r7["leader"] == "Leader111" and r7["explorer_url"] == "https://explorer.solana.com/tx/5abcTx?cluster=devnet"
     assert all(r["explorer_url"] is None for r in rows[:6])                    # local-feed signals have no transaction
     assert all(r["reason_text"] for r in rows) and "nothing to sell" in rows[3]["reason_text"]
+    assert rows[1]["reason_text"] == "AAPL would go from 4 to 8 shares; the limit is 5."          # plain English, same as the explanation
     # resuming after row 5 sends only the rest
     with make_client(tmp_path) as c:
         rest = sse(c.get(f"/follow/{d.name}/stream", headers={"last-event-id": "5"}).text)
@@ -120,24 +125,68 @@ def test_explain_each_kind_and_refuse_bad_ids(tmp_path):
         assert ex(2).status_code == 409
 
 
-def test_start_validates_limits_and_never_takes_a_path(client):
-    for limits, word in (({"max_daily_loss": 0}, "positive"), ({"max_position_per_symbol": -3}, "positive"),
-                         ({"price_band_pct": 1.5}, "positive integer"), ({"bogus": 1}, "unknown limit"),
-                         ({"kill_switch": 1}, "unknown limit"), ({"fees": {}}, "unknown limit"),
-                         ({"loss_streak_cooldown": {"losses": 0}}, "positive"), ({"max_daily_loss": True}, "positive")):
-        r = client.post("/follow/run", json={"data": "fixture", "limits": limits})
-        assert r.status_code == 422 and r.json()["error"] == "bad_limit" and word in r.json()["message"], (limits, r.text)
-    for extra in ({"path": "/etc/passwd"}, {"rules": "x.yaml"}, {"runs_dir": "/tmp"}, {"log": "gate.log"}, {"offline": True}):
-        assert client.post("/follow/run", json={"data": "fixture", **extra}).status_code == 422
-    assert client.post("/follow/run", json={"feed": "../x"}).status_code == 422
+def test_rules_validation_save_hash_and_the_409_rule(client, tmp_path):
+    g = client.get("/rules").json()
+    assert g["saved"] is False and g["hash"] is None and set(g["presets"]) == {"cautious", "balanced", "active"}
+    assert g["defaults"]["max_position_per_symbol"] == 100
+    # no run without saved rules
+    r = client.post("/follow/run", json={"data": "fixture"})
+    assert r.status_code == 409 and r.json()["error"] == "rules_not_saved" and "Save your rules" in r.json()["message"]
+    bad = [({**BALANCED, "max_daily_loss": 0}, "positive"), ({**BALANCED, "max_position_per_symbol": -3}, "positive"),
+           ({**BALANCED, "price_band_pct": 1.5}, "positive integer"), ({**BALANCED, "bogus": 1}, "unknown limit"),
+           ({**BALANCED, "kill_switch": 1}, "unknown limit"), ({**BALANCED, "fees": {}}, "unknown limit"),
+           ({**BALANCED, "max_daily_loss": True}, "positive"), ({"max_daily_loss": 5000}, "missing"),
+           ({**BALANCED, "loss_streak_cooldown": {"losses": 0, "cooldown_seconds": 5}}, "positive"),
+           ({**BALANCED, "loss_streak_cooldown": {"losses": 2}}, "both"), ({**BALANCED, "price_band_pct": 101}, "no larger than 100")]
+    for body, word in bad:
+        r = client.put("/rules", json=body)
+        assert r.status_code == 422 and r.json()["error"] == "bad_limit" and word in r.json()["message"], (body, r.text)
+    assert client.put("/rules", content=b"not json").status_code == 422
+    assert client.get("/rules").json()["saved"] is False and not (tmp_path / "profile").exists()      # nothing was written
+    before = sha256_file(BASE)
+    ok = client.put("/rules", json=BALANCED).json()
+    assert ok["saved"] and len(ok["hash"]) == 64 and ok["saved_at"].endswith("+00:00") and ok["limits"] == BALANCED
+    assert client.get("/rules").json()["hash"] == ok["hash"] and sha256_file(BASE) == before          # the repo's rules.yaml is untouched
+    assert (tmp_path / "profile" / "rules.json").exists()
+    assert client.put("/rules", json={**BALANCED, "max_position_per_symbol": 8}).json()["hash"] != ok["hash"]
+    # a damaged profile file counts as not saved
+    (tmp_path / "profile" / "rules.json").write_text('{"limits": {}, "hash": "x"}')
+    assert client.get("/rules").json()["saved"] is False
+
+
+def test_profile_file_is_gitignored():
+    assert "profile/" in (Path(__file__).resolve().parent.parent / ".gitignore").read_text().split()
+
+
+def test_start_validates_options_and_never_takes_a_path(client):
+    client.put("/rules", json=BALANCED)
+    for size, ses, word in (({"mode": "percent"}, {}, "give a value"), ({"mode": "percent", "value": 0}, {}, "between 1 and 1000"),
+                            ({"mode": "fixed"}, {}, "give a value"), ({}, {"max_trades": 0}, "positive"),
+                            ({}, {"max_volume": -5}, "positive"), ({}, {"max_total_amount": 0}, "positive")):
+        r = client.post("/follow/run", json={"data": "fixture", "size": size, "session": ses})
+        assert r.status_code == 422 and r.json()["error"] == "bad_option" and word in r.json()["message"], (size, ses, r.text)
+    for extra in ({"path": "/etc/passwd"}, {"rules": "x.yaml"}, {"runs_dir": "/tmp"}, {"log": "gate.log"}, {"offline": True},
+                  {"limits": {"max_daily_loss": 1}}, {"session": {"file": "x"}}, {"size": {"mode": "same", "path": "x"}}):
+        assert client.post("/follow/run", json={"data": "fixture", **extra}).status_code == 422, extra
+    for bad in ({"feed": "../x"}, {"pace": "ludicrous"}, {"size": {"mode": "half"}}, {"session": {"max_trades": 1.5}}):
+        assert client.post("/follow/run", json=bad).status_code == 422
     assert not client.runs_dir.exists() or not any(p.is_dir() for p in client.runs_dir.iterdir())   # nothing was started
+
+
+def test_leaders_list_has_a_public_key_only(client):
+    j = client.get("/follow/leaders").json()
+    assert [x["id"] for x in j["leaders"]] == ["momentum", "orb", "meanrev"] and all(x["about"] for x in j["leaders"])
+    for x in j["leaders"]:
+        assert x["public_key"] is None or x["explorer_url"] == f"https://explorer.solana.com/address/{x['public_key']}?cluster=devnet"
+    assert "secret" not in client.get("/follow/leaders").text.lower().replace("the secret is", "")
 
 
 def test_a_real_run_through_the_api_uses_the_override_and_the_label(tmp_path):
     before = sha256_file(BASE)
     with make_client(tmp_path) as c:
-        r = c.post("/follow/run", json={"data": "fixture", "feed": "local", "leader": "momentum",
-                                        "limits": {"max_position_per_symbol": 7, "loss_streak_cooldown": {"losses": 2}}})
+        c.put("/rules", json=BALANCED)
+        r = c.post("/follow/run", json={"data": "fixture", "feed": "local", "leader": "momentum", "pace": "fast",
+                                        "size": {"mode": "percent", "value": 150}, "session": {"max_trades": 3}})
         assert r.status_code == 201
         run = r.json()["run"]
         end = time.monotonic() + 60
@@ -148,14 +197,16 @@ def test_a_real_run_through_the_api_uses_the_override_and_the_label(tmp_path):
     assert s["state"] == "done" and s["seen"] == s["total_in_feed"] > 0
     assert s["data_label"] == "SYNTHETIC FIXTURE" and s["feed"]["badge"] == "local feed"
     assert s["limits"]["max_position_per_symbol"] == 7 and s["limits"]["cooldown_after_losses"] == 2
-    assert s["limit_overrides"] == {"max_position_per_symbol": 7, "loss_streak_cooldown": {"losses": 2}}
+    assert s["limit_overrides"]["max_position_per_symbol"] == 7 and s["pace"]["name"] == "off"        # the test override wins
+    assert s["copy"]["scale"] == "150/100" and s["copy"]["session_limits"]["max_trades"] == 3
     assert sum(1 for e in events if e["event"] == "signal") == s["seen"] and events[-1]["event"] == "end"
     assert sha256_file(BASE) == before                                             # the repo's rules.yaml is never touched
 
 
 def test_only_one_run_at_a_time_and_stop_ends_it(tmp_path):
-    with make_client(tmp_path, pace=150) as c:
-        run = c.post("/follow/run", json={"data": "fixture"}).json()["run"]
+    with make_client(tmp_path, pace=None) as c:             # the real pace (seconds between signals) so the run is still going
+        c.put("/rules", json=BALANCED)
+        run = c.post("/follow/run", json={"data": "fixture", "feed": "local", "pace": "relaxed"}).json()["run"]
         again = c.post("/follow/run", json={"data": "fixture"})
         assert again.status_code == 409 and again.json()["error"] == "follow_running"
         assert c.post(f"/follow/{run}/stop").json()["stopped"] is True

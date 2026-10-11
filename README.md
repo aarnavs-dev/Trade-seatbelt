@@ -23,7 +23,7 @@ make demo      # client -> gate -> log -> auditor -> report, then tamper checks
 make follow    # one paper follower over a leader's feed: pre-filters, gate, copier ledger, plain-English explanations (real replay data if fetchable, else the labelled SYNTHETIC FIXTURE)
 make follow-chain # same, with the leader's signals read from Solana devnet (falls back to cache, then local feed, and says so)
 make devnet-check # publish 10 seeded signals to devnet, read them back, compare with feed.jsonl (funded key from make leaders-setup)
-make api && make web  # then open http://127.0.0.1:5173/app/follow: pick a leader, edit your 4 rules, press Start, click any row for the plain-English why (paper only)
+make api && make web  # then open http://127.0.0.1:5173 and follow the five pages in order (see "The site" below; paper only)
 make demo-recon # reconciliation + counterfactual on generated fixtures, with a 10-line summary
 make api       # read-only API for the dashboard on 127.0.0.1:8000 (never on the order path)
 make web       # dashboard dev server on http://127.0.0.1:5173 (run `make api` in another terminal; needs Node 20+)
@@ -83,33 +83,29 @@ flowchart LR
 
 - `api/` thin FastAPI for the dashboard, bound to 127.0.0.1 only: `GET /report`, `GET /events/stream` (SSE tail of the log), `POST /demo/run` (the demo flow with its own gate process in a temp dir), `POST /tamper` (edits a *copy* of the log, verifies the copy, returns the first bad seq; the real log is only read and no path is taken from the client), `GET|POST /recon` and `GET|POST /counterfactual` (bundled fixtures, or your CSV as the raw request body, 1 MB cap, errors name the row), `GET /bench` (stored numbers from `bench/results/*.json`, nothing computed), `GET /invariants` (the list from `docs/INVARIANTS.md`; test status only from the JUnit file `make test` writes to `out/pytest-junit.xml`, otherwise "unknown").
 
-- `web/` Vite + React + TypeScript + Tailwind + react-three-fiber dashboard (details below).
+- `web/` Vite + React + TypeScript site: `/` landing, `/rules`, `/follow`, `/dashboard`, `/audit` (details below).
 
 Not built yet: the optional Gemini / ElevenLabs / Tiger Data integrations.
 
-## Landing page and dashboard (`web/`)
-
-`/` is the landing page (hero replays a real hash-chained log from the bundled fixture and verifies it in your browser; the Proof section reads
-numbers from `/bench` and invariant test status from `/invariants`, and shows no number when the API is down). `/app` is the dashboard.
+## The site (`web/`)
 
 ```
-make api     # terminal 1: 127.0.0.1:8000
-make web     # terminal 2: http://127.0.0.1:5173 (Vite proxies /api to the API)
+make api     # terminal 1: 127.0.0.1:8000, never on the order path
+make web     # terminal 2: http://127.0.0.1:5173 (Vite proxies /api to the API; needs Node 20+)
 ```
 
-Press **D** to run the demo: the API starts its own gate process in a temp dir, feeds it the fixture orders, and the scene is driven
-by the real SSE stream of that log. ACCEPT orders pass the gate ring and lock onto the chain; REJECT orders are deflected at the ring
-with their reason code (their decision is still logged, so a rejected order also becomes a block). Hover a block for the full event, the rule
-that decided it and its `prev_hash` link; the panel recomputes the block's SHA-256 in your browser. **T** edits a *copy* of the log and plays the
-verifier's result (the real log is never modified); **R** resets; **V** sweeps the links; **1 / 2 / 3** open reconciliation, counterfactual
-and benchmarks; **Cmd/Ctrl+K** opens the command palette; the mouse wheel travels along the chain.
+Five pages, light theme, no login. Demo steps, in order:
 
-Rendering rules: instanced meshes, at most 200 blocks on stage (older ones collapse into an "N earlier blocks" marker), device pixel ratio
-capped at 2, the three.js chunk is lazy-loaded, rendering pauses while the tab is hidden. With `prefers-reduced-motion`, no WebGL, `?view=2d`,
-or a phone-width screen the dashboard shows a 2D SVG chain instead. Permanent label: "SIMULATED, no real orders".
+1. **`/` Landing.** What the product does, how Solana devnet is used (and what it does not do), and an example rejection.
+2. **`/rules`** Pick Cautious, Balanced or Active, or edit the four limits, then **Save**. The API validates them against the
+   `rules.yaml` schema and stores them in `profile/rules.json` (gitignored); the repo's `rules.yaml` is never changed. A follow run is
+   refused (409) until rules are saved.
+3. **`/follow`** Choose a leader, a source (Auto, Chain (devnet) or Local feed), how much to copy, optional session limits and a pace,
+   then **Start**. Rows appear as signals are processed; click one for the plain-English why. The badge text is read from the run's manifest.
+4. **`/dashboard`** and 5. **`/audit`** are built in the next step (stubs for now). The old `/app` routes redirect to the new pages.
 
-Browser check (Playwright; screenshots to `web/e2e/shots/`, plus overflow and contrast audits): with `make api` and `make web` running,
-`cd web && npx playwright install chromium && node e2e/shots.mjs` (dashboard) and `node e2e/landing.mjs` (landing page: copy audit, every benchmark number traced to the result files, overflow, contrast); `node e2e/perf.mjs` against `npx vite preview` measures load time.
+`make follow` and `make follow-chain` do the same from the terminal. `node web/e2e/shots.mjs` (both servers running, `npx playwright install chromium`
+once) saves one screenshot per page and checks the rules-to-follow flow, overflow and text contrast.
 
 ## Results and docs
 
@@ -121,14 +117,3 @@ Browser check (Playwright; screenshots to `web/e2e/shots/`, plus overflow and co
 ## License
 
 MIT, Copyright (c) 2026 aarnav.dev. See [LICENSE](LICENSE). Third-party packages and their licenses are listed in [docs/DISCLOSURE.md](docs/DISCLOSURE.md).
-
-### Follow page (`/app/follow`)
-
-Run `make api` in one terminal and `make web` in another, then open `/app/follow`. Press **Start**: the API launches
-`python -m copier follow` (its own gate under `runs/<id>/`), and the page shows each signal as it is processed. Rows are
-COPIED, STOPPED BY COPIER, REJECTED BY YOUR RULES or CLIPPED; click one for the explanation. Your four limits are checked by the
-API (an invalid value shows its message) and apply to that run only; the repo's `rules.yaml` is never changed. The badge shows
-where the data came from ("REPLAY of real historical data" or "SYNTHETIC FIXTURE") and the feed ("local feed" or "chain (devnet)").
-`GET /follow/{run}/stream|summary|explain/{n}` and `POST /follow/run|{run}/stop` are the API; a client never sends a path.
-Replay is paced (about 120 ms per signal) so you can watch it; that pacing is a setting, not a measurement.
-`node web/e2e/follow.mjs` (with both servers up) takes the 1440 and 390 px screenshots and audits overflow and contrast.

@@ -39,6 +39,10 @@ COPIER_PROTECTS = {
     "LEADER_DRAWDOWN_STOP": "following a leader who is deep in a drawdown",
     "SELL_WITHOUT_POSITION": "accidentally going short by copying a sale of something you never bought",
     "SIZE_ROUNDS_TO_ZERO": "a copied order that is too small to exist after scaling",
+    "PER_TRADE_AMOUNT_LIMIT": "one trade that costs more than you decided a single trade may cost",
+    "SESSION_TRADE_LIMIT": "copying more trades in one session than you decided",
+    "SESSION_VOLUME_LIMIT": "copying more shares in one session than you decided",
+    "SESSION_BUDGET_LIMIT": "spending more in one session than you decided",
     "SIZE_CLIPPED": "selling more than you hold, which would flip you short",
 }
 MAX_LISTED = 5

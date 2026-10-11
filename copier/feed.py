@@ -16,6 +16,7 @@ class Incoming:
     raw: Any        # the signal object as received, not yet validated
     ref: str        # where it came from, e.g. "line 7"
     tx: str | None = None     # the Solana signature when it was read from the chain
+    slot: int | None = None   # the slot it landed in (chain only)
 
 
 def write_feed(path, items) -> None:
@@ -23,7 +24,7 @@ def write_feed(path, items) -> None:
     keeps each item's signer and signature; only lines with via == "chain" may name a signer."""
     with open(path, "wb") as f:
         for i in items:
-            f.write(orjson.dumps({"signal": i.signal.to_dict(), "via": "chain", "tx": i.signature, "signer": i.signer},
+            f.write(orjson.dumps({"signal": i.signal.to_dict(), "via": "chain", "tx": i.signature, "signer": i.signer, "slot": i.slot},
                                  option=orjson.OPT_SORT_KEYS) + b"\n")
 
 
@@ -39,7 +40,8 @@ def read_local(path) -> list[Incoming]:
             continue          # publisher notes such as chain_disabled
         signer = d.get("signer") if isinstance(d, dict) and d.get("via") == "chain" and isinstance(d.get("signer"), str) else LOCAL_SIGNER
         tx = d.get("tx") if isinstance(d, dict) and signer != LOCAL_SIGNER and isinstance(d.get("tx"), str) else None
-        out.append(Incoming(signer, d.get("signal") if isinstance(d, dict) else d, f"line {n}", tx))
+        slot = d.get("slot") if tx and isinstance(d.get("slot"), int) else None
+        out.append(Incoming(signer, d.get("signal") if isinstance(d, dict) else d, f"line {n}", tx, slot))
     return out
 
 

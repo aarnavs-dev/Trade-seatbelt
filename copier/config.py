@@ -65,6 +65,11 @@ class FollowerConfig:
     scale_den: int = 2
     leader_drawdown_stop: int = 2_000    # cents; stop opening/adding when the leader's realized drawdown reaches this
     allow_short: bool = False            # False: a copied SELL is clipped to the follower's long position (never short)
+    fixed_qty: int | None = None         # copy this many shares per trade instead of scaling the leader's qty
+    max_trades: int | None = None        # session limits (copier pre-filters, counted on orders the gate ACCEPTED);
+    max_volume: int | None = None        #   shares in total
+    max_total_amount: int | None = None  #   cents in total
+    max_trade_amount: int | None = None  #   cents per trade
 
     def __post_init__(self):
         if not self.allowlist or not all(isinstance(s, str) and s for s in self.allowlist):
@@ -75,8 +80,18 @@ class FollowerConfig:
         _pos_int("scale_num", self.scale_num)
         _pos_int("scale_den", self.scale_den)
         _pos_int("leader_drawdown_stop", self.leader_drawdown_stop)
+        for name in ("fixed_qty", "max_trades", "max_volume", "max_total_amount", "max_trade_amount"):
+            if getattr(self, name) is not None:
+                _pos_int(name, getattr(self, name))
         if type(self.allow_short) is not bool:
             raise ConfigError(f"allow_short must be true or false, got {self.allow_short!r}")
+
+    def copy_description(self) -> dict:
+        """How much is copied and the session limits, for the manifest."""
+        size = ({"mode": "fixed", "shares_per_trade": self.fixed_qty} if self.fixed_qty
+                else {"mode": "same" if (self.scale_num, self.scale_den) == (1, 1) else "percent", "scale": f"{self.scale_num}/{self.scale_den}"})
+        return {**size, "session_limits": {"max_trades": self.max_trades, "max_volume": self.max_volume,
+                                           "max_total_amount": self.max_total_amount, "max_trade_amount": self.max_trade_amount}}
 
     def to_dict(self) -> dict:
         d = asdict(self)
