@@ -1,7 +1,7 @@
 PYTHON312 ?= $(shell command -v python3.12 || echo /opt/homebrew/bin/python3.12)
 PY = .venv/bin/python
 
-.PHONY: setup demo demo-recon test bench bench-docker bench-report clean api web web-build
+.PHONY: setup demo demo-recon test bench bench-docker bench-report clean api web web-build web-test
 
 setup:
 	$(PYTHON312) -m venv .venv
@@ -27,6 +27,9 @@ web:
 
 web-build:
 	cd web && ([ -d node_modules ] || npm ci) && npm run build
+
+web-test:
+	cd web && ([ -d node_modules ] || npm ci) && npm test
 
 clean:
 	rm -rf out .pytest_cache .hypothesis

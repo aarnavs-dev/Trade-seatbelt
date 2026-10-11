@@ -22,6 +22,8 @@ make setup     # creates .venv and installs dependencies
 make demo      # client -> gate -> log -> auditor -> report, then tamper checks
 make demo-recon # reconciliation + counterfactual on generated fixtures, with a 10-line summary
 make api       # read-only API for the dashboard on 127.0.0.1:8000 (never on the order path)
+make web       # dashboard dev server on http://127.0.0.1:5173 (run `make api` in another terminal; needs Node 20+)
+make web-test  # front-end unit tests (browser-side hash recomputation, money formatting)
 make test      # unit, property-based (Hypothesis), durability and tamper tests
 make bench     # benchmark (native); BENCH_N=20000 BENCH_REPS=1 make bench for a quick run
 make bench-docker   # same matrix with the gate in a 1 CPU / 512 MB container (needs Docker)
@@ -77,7 +79,30 @@ flowchart LR
 
 - `api/` thin FastAPI for the dashboard, bound to 127.0.0.1 only: `GET /report`, `GET /events/stream` (SSE tail of the log), `POST /demo/run` (the demo flow with its own gate process in a temp dir), `POST /tamper` (edits a *copy* of the log, verifies the copy, returns the first bad seq; the real log is only read and no path is taken from the client), `GET|POST /recon` and `GET|POST /counterfactual` (bundled fixtures, or your CSV as the raw request body, 1 MB cap, errors name the row), `GET /bench` (stored numbers from `bench/results/*.json`, nothing computed).
 
-Not built yet: `web/` (in progress), and the optional Gemini / ElevenLabs / Tiger Data integrations.
+- `web/` Vite + React + TypeScript + Tailwind + react-three-fiber dashboard (details below).
+
+Not built yet: the optional Gemini / ElevenLabs / Tiger Data integrations.
+
+## Dashboard (`web/`)
+
+```
+make api     # terminal 1: 127.0.0.1:8000
+make web     # terminal 2: http://127.0.0.1:5173 (Vite proxies /api to the API)
+```
+
+Press **D** to run the demo: the API starts its own gate process in a temp dir, feeds it the fixture orders, and the scene is driven
+by the real SSE stream of that log. ACCEPT orders pass the gate ring and lock onto the chain; REJECT orders are deflected at the ring
+with their reason code (their decision is still logged, so a rejected order also becomes a block). Hover a block for the full event, the rule
+that decided it and its `prev_hash` link; the panel recomputes the block's SHA-256 in your browser. **T** edits a *copy* of the log and plays the
+verifier's result (the real log is never modified); **R** resets; **V** sweeps the links; **1 / 2 / 3** open reconciliation, counterfactual
+and benchmarks; **Cmd/Ctrl+K** opens the command palette; the mouse wheel travels along the chain.
+
+Rendering rules: instanced meshes, at most 200 blocks on stage (older ones collapse into an "N earlier blocks" marker), device pixel ratio
+capped at 2, the three.js chunk is lazy-loaded, rendering pauses while the tab is hidden. With `prefers-reduced-motion`, no WebGL, `?view=2d`,
+or a phone-width screen the dashboard shows a 2D SVG chain instead. Permanent label: "SIMULATED, no real orders".
+
+Browser check (Playwright; screenshots to `web/e2e/shots/`, plus overflow and contrast audits): with `make api` and `make web` running,
+`cd web && npx playwright install chromium && node e2e/shots.mjs`.
 
 ## Results and docs
 
