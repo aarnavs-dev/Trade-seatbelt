@@ -6,8 +6,8 @@ MIT, Copyright (c) 2026 aarnav.dev — see the [LICENSE](../LICENSE) file in the
 
 ## What we built (this project's own code)
 
-`core/`, `gate/`, `auditor/`, `client/`, `api/`, `web/`, `fixtures/`, `bench/`, `tests/`, `scripts/`, the `Makefile`, `Dockerfile` and
-these docs. The design (hash-chained log, pure `check()` shared by gate and auditor, single-writer gate with
+`core/`, `gate/`, `auditor/`, `client/`, `api/`, `web/`, `sim/`, `marketdata/`, `leaders/`, `copier/`, `fixtures/`, `bench/`, `tests/`,
+`scripts/`, the `Makefile`, `Dockerfile` and these docs. The design (hash-chained log, pure `check()` shared by gate and auditor, single-writer gate with
 group commit, benchmark verification against a reference model) is ours.
 
 **Claude Code was used to build this project.** The code, tests, benchmark harness and documentation were written
@@ -122,14 +122,24 @@ setuptools is the build backend named in `pyproject.toml`; it is not installed i
 | `python:3.12-slim` image | base of the benchmark container | Python: PSF; Debian packages: various |
 | Homebrew | installing Python / Docker on the dev machine | BSD-2-Clause |
 
+## External services
+
+The core (gate, auditor, reconciliation, counterfactual, benchmark) calls no external service and needs no keys. These **optional**
+services are used by the simulator and the copy-trading layer only, each described in the sections below: Alpaca Market Data
+(read-only, needs keys), yfinance (unofficial Yahoo wrapper, no key) and the Solana **devnet** public RPC, faucet and Memo program.
+With none of them reachable, the follower falls back to the cache, then to a local feed, then to a labelled SYNTHETIC FIXTURE.
+
 ## Not used
 
-No external API or service is called. The following are described in the project brief as optional extras and are
-**not built or integrated**: Gemini API, ElevenLabs, Tiger Data (TimescaleDB). (FastAPI and the React front end *are* built; see above.) The application runs fully offline and needs no keys; `.env.example` lists placeholders for them only.
+The following are described in the project brief as optional extras and are **not built or integrated**: Gemini API, ElevenLabs,
+Tiger Data (TimescaleDB). `.env.example` lists placeholders for them only. OpenTimestamps and Solana mainnet are not used.
 
 ## Data
 
-All orders and logs are generated (seeded). No real market data, no personal financial data, no broker credentials.
+Orders, logs and fixtures are generated (seeded); the synthetic bars are labelled SYNTHETIC FIXTURE and are not market data.
+Replay runs may use real historical bars fetched from Alpaca or yfinance (cached under the gitignored `marketdata/cache/`), and
+read them only; real data was exercised in tests only through a faked provider. No personal financial data and no broker
+credentials are used; execution is paper only.
 
 ## Copy-trading layer (`marketdata/`, `leaders/`)
 

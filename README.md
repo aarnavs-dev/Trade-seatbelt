@@ -102,7 +102,7 @@ Five pages, dark theme with a 3D chain (a 2D version on phones, with reduced mot
    refused (409) until rules are saved.
 3. **`/follow`** Choose a leader, a source (Auto, Chain (devnet) or Local feed), how much to copy, optional session limits and a pace,
    then **Start**. Rows appear as signals are processed with a strip of blocks above them (hover a block to highlight its row, click for the drawer); click a row for the plain-English why. The badge text is read from the run's manifest.
-4. **`/dashboard`** (a mini chain, rest to come) and 5. **`/audit`** (the medium chain with Verify and a tamper demo on a copy; the rest to come) are built in the next step. The old `/app` routes redirect to the new pages.
+4. **`/dashboard`** and 5. **`/audit`** are **still placeholders**. `/dashboard` shows only a mini chain of the latest demo log; `/audit` has the medium chain with Run demo, Verify and a tamper demo on a copy. Their full versions (P&L, positions, rejects by rule, log table, report / recon / counterfactual views, export) are planned and not built. The old `/app` routes redirect to the new pages.
 
 `make follow` and `make follow-chain` do the same from the terminal. `node web/e2e/shots.mjs` (both servers running, `npx playwright install chromium`
 once) saves one screenshot per page and checks the rules-to-follow flow, overflow and text contrast.

@@ -1,6 +1,6 @@
 """Pace: how long the follower waits between visible signals. It changes TIMING ONLY: nothing here is read by a rule, a
 filter or the gate, so decisions are identical at every pace (tested with an injected clock). Delays are seeded, so the
-same (pace, seed) always waits the same amounts, and activity never looks instant or machine-regular."""
+same (pace, seed) always waits the same amounts. The wait exists so the rows on /follow arrive slowly enough to read."""
 
 import random
 
