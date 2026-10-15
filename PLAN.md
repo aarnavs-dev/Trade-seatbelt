@@ -50,7 +50,7 @@ Design (agreed): the rules hash lives in a **control record inside the hash chai
 - [x] Auditor: `RULES_MISMATCH` finding, report `rules_record` (MATCH / MISMATCH / PARTIAL / NOT_RECORDED), a Rules line before the P&L; v1 is reported, not a finding.
 - [x] Readers updated: SSE tail (`control` event), tamper demo (never edits the record), `copier/rows.py` (skips records), `fixtures/tamper.py` + demo step `rules 1`.
 - [x] Tests: new `tests/test_rules_record.py` (30), all tamper tests now run on v1 and v2 logs, v1 fixture pinned to its pre-change state hash; invariant 21.
-- [x] Suite 398 passed / 1 skipped; demo, recon, web build + unit + Playwright pass; quick bench valid (but taken in macOS Low Power Mode: no performance claim; re-run on AC power).
+- [x] Suite 398 passed / 1 skipped (also on a clean clone of the final commit); demo, recon, web build + unit + Playwright pass; quick bench valid (but taken in macOS Low Power Mode: no performance claim; re-run on AC power).
 - Found and fixed on the way: bench runs reused a stale `bench/runs/<id>/gate.log` (profile runs went invalid on a second run).
 
 ### Phase 3: Checkpoints and the anchor interface (local first)
