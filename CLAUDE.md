@@ -45,13 +45,18 @@ Source of truth = the append-only hash-chained log. Everything else is a derived
 ## Event format and rules
 Event: `seq, ts, client_order_id, symbol, side, qty, price, decision(ACCEPT|REJECT), reason_code, reason_text, prev_hash, hash`.
 `hash = SHA-256(prev_hash || canonical JSON of the rest)`. Canonical JSON = sorted keys, no whitespace, integers in minor units, **no floats for money**.
-Phase 2 will add a log version field and the rules hash; until then the format above is the only one.
+**Log v2 (Phase 2, done):** besides order events a log may hold *control records*, chained lines with their own `type`. The only one so far is
+`{type: "RULES", seq, ts, log_version: 2, rules_hash, prev_hash, hash}`, written by the gate at start-up whenever the SHA-256 of the canonical JSON of its
+*parsed* rules differs from the last recorded one (rules are loaded once per process, so one record per start is enough; it is durable before the first
+order is accepted). It takes a seq, so in a v2 log the first order is seq 2. Order events are byte-identical to v1, so a v1 log (no record) verifies unchanged
+and is reported `NOT_RECORDED`. `core.logio.scan()` yields orders only (the chain, records included, is still fully verified); `scan_records()` yields
+both. Anything that reads a log line by line must skip or handle `type` lines (the SSE tail sends them as a `control` event, `copier/rows.py` skips them).
 
 `rules.yaml`: `max_position_per_symbol`, `max_daily_loss`, `price_band_pct` (vs reference price), `max_orders_per_minute`, `loss_streak_cooldown`, `kill_switch`, `fees`.
 `check()` order is part of the contract (first failure wins): bad order, kill switch, rate limit, price band, max position, daily loss, loss-streak cooldown.
 
 ## Invariants
-Listed with their tests in `docs/INVARIANTS.md` (20 rows). Each needs a test that tries to break it. Headline ones: no ACCEPT breaches a limit; replay gives a byte-identical state hash; cash and positions reconcile with integer money; duplicate ids are never double-counted; any edit/delete/reorder of a log line is detected and the first bad seq reported; reconciliation never guesses (AMBIGUOUS / MISSING_IN_BROKER / MISSING_IN_LOG); no reply before its fsync; kill -9 loses no acknowledged order.
+Listed with their tests in `docs/INVARIANTS.md` (21 rows). Each needs a test that tries to break it. Headline ones: no ACCEPT breaches a limit; replay gives a byte-identical state hash; cash and positions reconcile with integer money; duplicate ids are never double-counted; any edit/delete/reorder of a log line is detected and the first bad seq reported; reconciliation never guesses (AMBIGUOUS / MISSING_IN_BROKER / MISSING_IN_LOG); no reply before its fsync; kill -9 loses no acknowledged order; the rules a log ran under are on record inside the chain and the auditor reports drift (`RULES_MISMATCH`).
 
 ## Decisions baked into the code
 - ACCEPT is an immediate full fill at the order price (simulation).
@@ -61,9 +66,12 @@ Listed with their tests in `docs/INVARIANTS.md` (20 rows). Each needs a test tha
 - The follower is close-only unless `allow_short`; its `client_order_id` is derived from the signal id.
 - A follow run uses a copy of the saved rules profile (`profile/rules.json`, gitignored); the repo's `rules.yaml` is never modified.
 - Tail truncation (deleting the newest lines) is not detectable by the chain alone; a test asserts the gap. Phase 3 closes it up to the last checkpoint.
+- Tests that need exact `ts` or seq values must allow for the rules record: the gate reads its clock once at start-up for it (`tests/helpers.clock_from`), and `Gate(..., record_rules=False)` writes a v1-style log (used for the committed recon fixture, which is deliberately v1).
+- The audit report has a `rules_record` section (`status` MATCH / MISMATCH / PARTIAL / NOT_RECORDED), and `chain.records_verified` counts orders plus records; `counts` and `chain.events_verified` count orders only.
 
-## Current state (verified 2026-10-15 from a clean clone of `bb5c23f`)
-Working: `make setup`, `demo`, `demo-recon`, `test` (344 passed, 2 skipped without `npm ci`; 345 / 1 with it; the remaining skip is Linux-only), `web-test` (10 passed), `web-build`, `bench` (20k x1 run, all runs valid), `api`, `web`, Playwright `shots.mjs` and `size.mjs`.
+## Current state
+Verified from a clean clone of `bb5c23f` on 2026-10-15 (before Phase 2): `make setup`, `demo`, `demo-recon`, `test`, `web-test`, `web-build`, `bench` (20k x1, all valid), `api`, `web`, `shots.mjs`, `size.mjs`.
+After Phase 2, in the working tree: `make test` 398 passed, 1 skipped (Linux-only); `demo` (now also tampers the rules record), `demo-recon`, `web-test`, `web-build`, `shots.mjs`, and a 20k x1 `bench` (all runs valid) pass. The committed `docs/PERFORMANCE.md` predates the rules record and has not been re-run.
 Not working or not built:
 - `/dashboard` and `/audit` are **placeholders** (mini chain; Run demo / Verify / Tamper only).
 - No UI for the simulator, reconciliation or counterfactual (their APIs exist).
@@ -72,7 +80,7 @@ Not working or not built:
 - The initial bundle is large (`Scene` chunk ~930 kB raw, ~248 kB gzip; Vite warns). It loads lazily on the 3D pages.
 
 ## Known gaps (document or close)
-Tail truncation undetectable; default macOS `os.fsync` does not survive power loss (`F_FULLFSYNC` is opt-in, ~208x slower per call); gate `ts` is wall-clock so live runs never hash identically (deterministic only with the injected clock); the auditor needs the same `rules.yaml` as the gate (fixed by the Phase 2 rules hash); the simulator price model is a toy and static reference prices drift out of the band on long runs.
+Tail truncation undetectable; default macOS `os.fsync` does not survive power loss (`F_FULLFSYNC` is opt-in, ~208x slower per call); gate `ts` is wall-clock so live runs never hash identically (deterministic only with the injected clock); the auditor still needs the same `rules.yaml` as the gate (the log holds only its hash, so drift is now reported but the rules themselves are not recoverable); the simulator price model is a toy and static reference prices drift out of the band on long runs.
 
 ## Hard rules
 - Simulated/paper only until the broker phase. No real orders, no real money, no broker credentials in the repo.
@@ -81,7 +89,7 @@ Tail truncation undetectable; default macOS `os.fsync` does not survive power lo
 - Benchmarks must be reproducible with one command; report only measured numbers. `make bench` never touches the committed `docs/PERFORMANCE.md`; only `make bench-report` does.
 - Landing copy must be honest: say "simulated", say what is and is not covered.
 - Optional integrations (Gemini, ElevenLabs, Tiger Data) live behind interfaces, off by default, and disclosed in `docs/DISCLOSURE.md` (also update it whenever a dependency or external service is added).
-- Phase 2 (log format) is deliberate and done once: do not change event fields or hashing casually.
+- The log format (Phase 2) is settled: do not change event fields, hashing or the record layout casually. New control record types (Phase 3 checkpoints) go through `CONTROL_TYPES` in `core/events.py`.
 
 ## Stack
 Python 3.12, uvloop, orjson, pydantic v2, pytest, hypothesis, FastAPI. Frontend: Vite, React, TypeScript, plain CSS on design tokens, three.js + @react-three/fiber + drei (no Tailwind, no framer-motion). Docker only for benchmark limits (1 vCPU, 512 MB).

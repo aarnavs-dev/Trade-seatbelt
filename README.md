@@ -77,7 +77,7 @@ flowchart LR
 
 - `core/` shared by gate and auditor: event schema, canonical JSON + hash chain, pure `check()`, FIFO ledger, log reader/writer.
 - `gate/` asyncio TCP server; one task owns the state and the log (single writer). Replies are sent only after the fsync that covers their event.
-- `auditor/` separate process; deterministic; needs the same `rules.yaml` as the gate. Also: `fills_csv.py` (strict broker-CSV reader), `recon.py` (log vs broker), `counterfactual.py` (past trades vs the rules).
+- `auditor/` separate process; deterministic; needs the same `rules.yaml` as the gate, and since log v2 it can tell: the gate records the hash of the rules it started with inside the chain (`type: RULES`, one per start whose rules changed), and the report says `Rules: MATCH`, `MISMATCH` (also a `RULES_MISMATCH` finding), `PARTIAL` or `NOT_RECORDED` (an older v1 log) before any P&L. Also: `fills_csv.py` (strict broker-CSV reader), `recon.py` (log vs broker), `counterfactual.py` (past trades vs the rules).
 - `client/` sends orders from a fixture file. `fixtures/` generates them with a fixed seed and hand-computed expected totals.
 - `bench/` workload, load generator, harness and report generator. `tests/`. `docs/`.
 

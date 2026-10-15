@@ -61,6 +61,22 @@ What this project does not do, does not guarantee, or has not shown. Measured fi
 
 ## What the log can and cannot prove
 
+- **The rules record pins *which* rules, not *what* they said.** The log holds a hash of the parsed rules, not the rules. To
+  audit you still need the rules file; if it is lost, only the hash remains and nothing can re-check the decisions. The hash is of
+  the parsed `Rules` model, so adding a field to the rules schema changes the hash of an unchanged YAML file; a log written before
+  such an upgrade then reports `RULES_MISMATCH` against the upgraded file (the cure is the old rules file, or a `log_version` bump).
+- **One rules file per audit.** If the gate restarted with different rules, the log has several records and a single supplied file
+  can match only some of them: the auditor reports `RULES_MISMATCH` at each record that differs and re-checks every order against the
+  file it was given. It does not audit each segment against its own rules.
+- **A v1 log is not pinned.** It verifies exactly as before but is reported `NOT_RECORDED`: its P&L is only "what these orders give
+  under the rules file you supplied". A gate started on an existing v1 log appends a record, so the old orders stay unpinned and the
+  report says `PARTIAL` with how many.
+- **The record detects drift, not a dishonest operator.** Whoever runs the gate can still write a new log from scratch, or delete the
+  newest lines, including a later RULES record (that is tail truncation below, and the record does not change it).
+- **Two different "rules hashes" exist.** A run manifest's `rules_sha256` is the SHA-256 of the file's bytes (comments and spacing
+  count); the log's `rules_hash` is of the parsed rules (they do not). They are not comparable.
+- The record's `ts` is the gate's clock at start-up (it is never below the last line's `ts`); the committed benchmark figures
+  in `PERFORMANCE.md` were measured before the record existed (one extra fsync per gate start, nothing per order).
 - **Tail truncation is not detectable.** Each line's hash covers only the line before it, so deleting the newest N lines leaves
   a perfectly valid shorter chain. Nothing outside the file records how long the log should be. A test asserts this gap
   (`tests/test_chain.py::test_known_gap_tail_truncation_is_not_detected`). Closing it needs an external anchor, for example

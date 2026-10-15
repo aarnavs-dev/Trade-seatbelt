@@ -44,12 +44,14 @@ The hackathon is over. Scope is no longer limited by the old judging criteria or
 3. [x] Fix `README.md` (dashboard and audit are still placeholders, so the README now says so rather than "next step") and `docs/DISCLOSURE.md` (remove the stale "Not used: no external API or service" section). Reword the `copier/pace.py` description (timing so the UI is readable, not "never look machine-regular").
 4. [x] Rewrite `CLAUDE.md` for the copy-trading product, based on this plan and on what step 1 found.
 
-### Phase 2: Log format change (before any anchoring)
-Recording the rules hash changes the event format and hashes. Do it once, deliberately.
-- [ ] Add a **log version field** so old logs still verify.
-- [ ] Record the **rules hash** in the log, so a changed `rules.yaml` cannot silently change audited P&L.
-- [ ] Update everything that depends on the format: `core/events.py`, fixtures' `expected.json`, the benchmark reference model, recon and counterfactual fixtures, invariant tests, `docs/INVARIANTS.md`.
-- [ ] Re-run the full suite and a verified benchmark; confirm old (v1) logs still verify.
+### Phase 2: Log format change (before any anchoring): DONE 2026-10-15
+Design (agreed): the rules hash lives in a **control record inside the hash chain** (`type: RULES`, `log_version`, `rules_hash`), written at **every gate start whose rules hash differs from the last recorded one** (the gate loads rules once per process; there is no live reload). Order events are byte-identical to v1, so v1 logs verify unchanged. The hash is of the **parsed** rules.
+- [x] Log version + `RULES` record, chained, durable before the first order; `scan()` still yields orders only, `scan_records()` yields both.
+- [x] Auditor: `RULES_MISMATCH` finding, report `rules_record` (MATCH / MISMATCH / PARTIAL / NOT_RECORDED), a Rules line before the P&L; v1 is reported, not a finding.
+- [x] Readers updated: SSE tail (`control` event), tamper demo (never edits the record), `copier/rows.py` (skips records), `fixtures/tamper.py` + demo step `rules 1`.
+- [x] Tests: new `tests/test_rules_record.py` (30), all tamper tests now run on v1 and v2 logs, v1 fixture pinned to its pre-change state hash; invariant 21.
+- [x] Suite 398 passed / 1 skipped; demo, recon, web build + unit + Playwright pass; quick bench valid (but taken in macOS Low Power Mode: no performance claim; re-run on AC power).
+- Found and fixed on the way: bench runs reused a stale `bench/runs/<id>/gate.log` (profile runs went invalid on a second run).
 
 ### Phase 3: Checkpoints and the anchor interface (local first)
 - [ ] Anchor interface with a **local backend** first. No network needed.

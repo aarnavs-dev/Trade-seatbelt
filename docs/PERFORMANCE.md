@@ -1,5 +1,10 @@
 # Performance
 
+> **Note (2026-10-15).** These figures were measured before the gate began writing a rules record at start-up (log v2). That adds one write
+> and one fsync per gate *start* and nothing per order; the order path is unchanged. The matrix has not been re-run since: a quick
+> single-rep check after the change was valid on every run but was taken with macOS Low Power Mode on, where the untouched pre-change code
+> measured the same, so it supports no comparison. Re-run `make bench` on AC power with Low Power Mode off before quoting new numbers.
+
 Simulated trading only. Every number below was measured by this repo's benchmark on the machine described and is read from `bench/results/` — nothing is estimated. There are **two separately labelled sets of runs**: **Native** (plain host process, **no CPU or memory limits enforced**) and **Docker** (gate in a container limited to `--cpus=1 --memory=512m`, on macOS inside Docker Desktop's Linux VM). Do not mix their numbers. Commit hashes in the result files are pre-rebase; see **Commit hash mapping** near the end.
 
 ## Workload (both sections)
