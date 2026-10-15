@@ -4,6 +4,7 @@ after every run. Writes raw results to bench/results/. Usage: python -m bench.ru
 import argparse
 import json
 import os
+import shutil
 import signal
 import socket
 import statistics
@@ -199,6 +200,7 @@ def pct(sorted_ns, q):
 def run_once(cfg, n, rules, wl, expected, rid, profile=None):
     fsync, mode, conns = cfg
     outdir = os.path.join(RUNS, rid)
+    shutil.rmtree(outdir, ignore_errors=True)  # a run starts on a fresh log: a leftover gate.log from an earlier run with this id would be replayed
     os.makedirs(outdir, exist_ok=True)
     log = os.path.join(outdir, "gate.log")
     rec = {"id": rid, "fsync": fsync, "mode": mode, "conns": conns, "n": n, "valid": False, "errors": []}
