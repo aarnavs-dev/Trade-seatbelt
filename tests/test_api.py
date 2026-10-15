@@ -310,7 +310,7 @@ def test_bench_serves_stored_numbers_unchanged(client):
     files = {p.name: json.loads(p.read_text()) for p in (ROOT / "bench" / "results").glob("*.json")}
     assert {r["file"] for r in j["runs"]} == {n for n, d in files.items() if "summary" in d}
     final = next(r for r in j["runs"] if r["file"].startswith("final_"))
-    src = next(d for n, d in files.items() if n.startswith("final_"))
+    src = files[final["file"]]  # the file the API says it served, not whichever final_*.json globs first
     assert final["rows"][0]["orders_per_sec"] == src["summary"][0]["orders_per_sec"]
     assert final["backend"] == "native"
     assert next(r for r in j["runs"] if r["file"].startswith("docker_"))["backend"] == "docker"
@@ -372,7 +372,7 @@ def test_invariants_without_a_result_file_are_unknown_not_passing(tmp_path):
 
 def test_real_invariants_file_parses_every_row(client):
     j = client.get("/invariants").json()
-    assert [r["id"] for r in j["invariants"]][:3] == ["1", "2", "3"] and len(j["invariants"]) == 22
+    assert [r["id"] for r in j["invariants"]][:3] == ["1", "2", "3"] and len(j["invariants"]) == 23
     assert all(r["refs"] for r in j["invariants"] if r["id"] != "9")  # only the benchmark-harness row has no pytest ref
 
 
