@@ -7,8 +7,9 @@ import orjson
 from pydantic import ValidationError
 
 from core.events import Event, Order
-from core.logio import LogWriter, event_line, repair_torn_tail, scan
 from core.book import Book
+from core.logio import LogWriter, event_line, repair_torn_tail, scan_records
+from core.rules import rules_hash
 
 
 class GateClosed(Exception):
@@ -29,7 +30,7 @@ def _err(msg: str) -> bytes:
 
 class Gate:
     def __init__(self, rules, log_path, fsync="batched", batch_max=256, clock=time.time_ns,
-                 queue_size=10_000, full_fsync=False):
+                 queue_size=10_000, full_fsync=False, record_rules=True):
         self.rules, self.log_path, self.clock = rules, log_path, clock
         self.fsync, self.full_fsync = fsync, full_fsync
         # per_order means exactly one event per fsync; batched is group commit of whatever is queued
@@ -38,12 +39,26 @@ class Gate:
         self.book = Book(rules)
         self.closed = True
         self.recovery_note = None
+        self.record_rules = record_rules  # False only to write a v1-style log (compatibility fixtures and tests)
+        self.replayed = 0                 # order events read back at start-up (control records are not counted)
+        self.rules_record = None          # the RulesRecord this start appended, or None if the log already had these rules
 
     async def start(self) -> None:
         self.recovery_note = repair_torn_tail(self.log_path)  # only a partial last line is repaired
-        for ev in scan(self.log_path):  # rebuild state; refuses to start on a broken chain
-            self.book.apply(ev)
+        for rec in scan_records(self.log_path):  # rebuild state; refuses to start on a broken chain
+            if isinstance(rec, Event):
+                self.book.apply(rec)
+                self.replayed += 1
+            else:
+                self.book.apply_record(rec)
         self.writer = LogWriter(self.log_path, self.fsync, self.full_fsync)
+        if self.record_rules and self.book.recorded_rules_hash != rules_hash(self.rules):
+            # Rules are loaded once per process (there is no live reload), so one record per start whose rules differ from
+            # the last recorded ones pins every later order to them. Durable before the first order is accepted.
+            rec = self.book.make_rules_record(max(self.clock(), self.book.last_ts))
+            self.writer.write(event_line(rec))
+            self.book.apply_record(rec)
+            self.rules_record = rec
         self.queue: asyncio.Queue = asyncio.Queue(self.queue_size)
         self.closed = False
         self.task = asyncio.create_task(self._run())

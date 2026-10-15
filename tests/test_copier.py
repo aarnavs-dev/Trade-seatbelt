@@ -485,8 +485,8 @@ def test_every_reject_is_explained_with_numbers_matching_an_independent_replay(t
                                        line("c3", "BUY", "AAPL", 1, 19000)], rules=rules2))
     ev2 = list(scan(tmp_path / "g2.log"))
     (x,) = explain_events(ev2, rules2)
-    assert x["reason_code"] == "MAX_DAILY_LOSS" and x["causes"] == [2]
-    assert x["before_n"] == independent(ev2, rules2)[3]["loss"] == 1000 + 2 * 50 and x["limit_n"] == 200
+    assert x["reason_code"] == "MAX_DAILY_LOSS" and x["causes"] == [e.seq for e in ev2 if e.client_order_id == "c2"]
+    assert x["before_n"] == independent(ev2, rules2)[x["seq"]]["loss"] == 1000 + 2 * 50 and x["limit_n"] == 200
 
 
 @settings(max_examples=40, deadline=None, suppress_health_check=list(HealthCheck))

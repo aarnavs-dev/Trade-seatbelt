@@ -184,7 +184,8 @@ def cf_csv() -> str:
 
 async def build_log(path: str, rules_path: str) -> None:
     clock_values = iter(T0_NS + t * 10**9 for *_, t in LOG_ORDERS)  # one tick per non-resend order
-    gate = Gate(load_rules(rules_path), path, "none", clock=lambda: next(clock_values))
+    # record_rules=False: this committed fixture is deliberately a v1 log (no rules record), so its seqs match the hand-computed answers
+    gate = Gate(load_rules(rules_path), path, "none", clock=lambda: next(clock_values), record_rules=False)
     await gate.start()
     for oid, side, sym, qty, price, _t in LOG_ORDERS:
         order = orjson.dumps(dict(client_order_id=oid, side=side, symbol=sym, qty=qty, price=price)) + b"\n"

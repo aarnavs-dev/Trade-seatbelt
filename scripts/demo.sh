@@ -27,7 +27,7 @@ echo "== 5. compare with hand-computed expected totals"
 $PY fixtures/check_expected.py "$OUT/report.json" fixtures/expected.json
 
 echo; echo "== 6. tamper checks (copies of the log)"
-for spec in "edit 5" "delete 9" "swap 12"; do
+for spec in "edit 5" "delete 9" "swap 12" "rules 1"; do
   set -- $spec
   $PY fixtures/tamper.py --in "$OUT/gate.log" --out "$OUT/tampered_$1.log" --mode "$1" --line "$2"
   $PY -m auditor --log "$OUT/tampered_$1.log" --rules rules.yaml --out "$OUT/tampered_$1" || true

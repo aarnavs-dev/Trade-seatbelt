@@ -53,7 +53,7 @@ ids = [f.client_order_id or f"csv-row-{f.row}" for f in fills]
 async def live():
     clock = iter(f.ts for f in fills)
     with tempfile.TemporaryDirectory() as d_:
-        gate = Gate(load_rules(cf["rules"]), os.path.join(d_, "g.jsonl"), "none", clock=lambda: next(clock))
+        gate = Gate(load_rules(cf["rules"]), os.path.join(d_, "g.jsonl"), "none", clock=lambda: next(clock), record_rules=False)
         await gate.start()
         out = []
         for i, f in zip(ids, fills):

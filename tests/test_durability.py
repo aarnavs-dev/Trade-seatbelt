@@ -9,7 +9,8 @@ import orjson
 import pytest
 
 import core.logio as logio
-from core.logio import LogWriter, scan
+from core.events import Event
+from core.logio import LogWriter, scan_records
 from gate.engine import Gate, GateClosed, _resp
 from gate.server import start_server
 from tests.helpers import RULES, counter_clock, line
@@ -65,9 +66,10 @@ async def run_clients(path, fsync, trace, commit=None, before_stop=None):
 
 def ends_of(path):
     pos, ends = 0, {}
-    for raw, ev in zip(open(path, "rb").read().splitlines(keepends=True), scan(path)):
+    for raw, ev in zip(open(path, "rb").read().splitlines(keepends=True), scan_records(path)):
         pos += len(raw)
-        ends[ev.seq] = pos
+        if isinstance(ev, Event):  # offsets of ORDER lines only; the rules record is not a reply
+            ends[ev.seq] = pos
     return ends
 
 
@@ -81,7 +83,7 @@ def test_no_reply_before_its_fsync(tmp_path, monkeypatch, fsync):
     assert violations(trace, ends) == []
     fsyncs = sum(k == "fsync_done" for k, _ in trace)
     if fsync == "per_order":
-        assert fsyncs == n          # one fsync per event
+        assert fsyncs == n + 1      # one fsync per event, plus the one that made the start-up rules record durable
     else:
         assert fsyncs < n           # group commit really happened
 
@@ -121,7 +123,7 @@ def test_failed_fsync_means_no_acknowledgement(tmp_path, monkeypatch):
     monkeypatch.setattr(logio.os, "fsync", broken)
 
     async def main():
-        gate = Gate(RULES, tmp_path / "g.log", "per_order", clock=counter_clock())
+        gate = Gate(RULES, tmp_path / "g.log", "per_order", clock=counter_clock(), record_rules=False)  # isolate the order path
         await gate.start()
         fut = await gate.submit(line("X1", "BUY", "AAPL", 1, 19000))
         with pytest.raises(GateClosed):
@@ -129,6 +131,18 @@ def test_failed_fsync_means_no_acknowledgement(tmp_path, monkeypatch):
         with pytest.raises(GateClosed):  # and it stops taking orders
             await gate.submit(line("X2", "BUY", "AAPL", 1, 19000))
     asyncio.run(main())
+
+
+def test_a_failed_fsync_of_the_rules_record_means_the_gate_does_not_start(tmp_path, monkeypatch):
+    """The rules record is written and synced before the first order is accepted. If that fails the gate refuses to run
+    rather than take orders whose rules are not on record."""
+    def broken(fd):
+        raise OSError("disk gone")
+    monkeypatch.setattr(logio.os, "fsync", broken)
+    gate = Gate(RULES, tmp_path / "g.log", "per_order", clock=counter_clock())
+    with pytest.raises(OSError):
+        asyncio.run(gate.start())
+    assert gate.closed
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="F_FULLFSYNC is macOS only")

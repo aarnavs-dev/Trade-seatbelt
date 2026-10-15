@@ -48,7 +48,9 @@ if __name__ == "__main__":
     if not ch["ok"]:
         print(f"CHAIN BROKEN at seq {ch['first_bad_seq']}: {ch['reason']}")
         raise SystemExit(2)
-    msg = f"chain OK, {ch['events_verified']} events, {len(r['findings'])} findings"
+    rr = r["rules_record"]
+    msg = (f"chain OK, {ch['events_verified']} events, {len(r['findings'])} findings, rules {rr['status']}"
+           f"{' (log does not record its rules)' if rr['status'] == 'NOT_RECORDED' else ''}")
     unmatched = 0
     if recon:
         c = recon["counts"]

@@ -10,6 +10,7 @@ from copier import ledger
 from copier.copier import CLIPPED, order_id_for
 from copier.feed import read_local
 from core.events import Event
+from core.logio import parse_line
 from leaders.signal import SignalError, validate
 
 COPIED, STOPPED, REJECTED, CLIP = "COPIED", "STOPPED_BY_COPIER", "REJECTED_BY_RULES", "CLIPPED"
@@ -25,10 +26,11 @@ def gate_events(path) -> dict:
         return out
     for raw in data.split(b"\n")[:-1]:
         try:
-            ev = Event.model_validate_json(raw)
+            ev = parse_line(raw)
         except ValueError:
             break
-        out[ev.client_order_id] = ev
+        if isinstance(ev, Event):  # a control record (rules in force) is not an order
+            out[ev.client_order_id] = ev
     return out
 
 

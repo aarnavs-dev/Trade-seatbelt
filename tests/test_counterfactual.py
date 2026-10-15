@@ -13,7 +13,7 @@ from hypothesis import given, settings, strategies as st
 from auditor.counterfactual import counterfactual
 from auditor.fills_csv import Fill, fmt_ts, parse_fills_csv
 from core.rules import load_rules
-from tests.helpers import run, run_gate, line
+from tests.helpers import clock_from, line, run, run_gate
 
 ROOT = Path(__file__).resolve().parent.parent
 FIX = ROOT / "fixtures" / "recon"
@@ -123,10 +123,10 @@ def gate_decisions(fills, rules=RULES):
     """Feed the same orders, in replay order, with the same timestamps, to the real Gate."""
     ordered = sorted(fills, key=lambda f: (f.ts, f.row))
     ids = [f.client_order_id or f"csv-row-{f.row}" for f in ordered]
-    clock = iter(f.ts for f in ordered)
+    clock = clock_from([f.ts for f in ordered])  # the gate spends its first clock tick on its rules record
     lines = [line(i, f.side, f.symbol, f.qty, f.price) for i, f in zip(ids, ordered)]
     with tempfile.TemporaryDirectory() as d:
-        out, gate = run(run_gate(Path(d) / "g.jsonl", lines, rules=rules, clock=lambda: next(clock)))
+        out, gate = run(run_gate(Path(d) / "g.jsonl", lines, rules=rules, clock=clock))
     return {o["client_order_id"]: (o["decision"], o["reason_code"]) for o in out}, gate
 
 

@@ -38,7 +38,8 @@ def window_start(path: Path, tail: int) -> tuple[int, int]:
 
 async def events(resolve: Callable[[], Path], *, tail: int = 500, after_seq: int = 0, follow: bool = True,
                  poll: float = 0.1, heartbeat: float = 15.0) -> AsyncIterator[bytes]:
-    """Yield SSE frames: `hello` (totals), then one `block` per complete log line, then keep following.
+    """Yield SSE frames: `hello` (totals), then one `block` per complete order line (`control` for a control record such as
+    the rules record; both carry the line number as their id), then keep following.
     If the source path changes or the file shrinks, emit `reset` (with an empty id) and stop; the client reopens."""
     path = resolve()
     yield b"retry: 1000\n\n"
@@ -72,8 +73,10 @@ async def events(resolve: Callable[[], Path], *, tail: int = 500, after_seq: int
                 got = True
                 if line_no > after_seq:
                     try:
-                        yield sse("block", orjson.loads(raw), id_=line_no)
-                    except orjson.JSONDecodeError:
+                        rec = orjson.loads(raw)
+                        # a control record (rules in force) is a chained line with a seq but is not an order: it gets its own event name
+                        yield sse("control" if "type" in rec else "block", rec, id_=line_no)
+                    except (orjson.JSONDecodeError, TypeError):
                         yield sse("malformed", {"line": line_no}, id_=line_no)
                 n += 1
                 if n % 500 == 0:

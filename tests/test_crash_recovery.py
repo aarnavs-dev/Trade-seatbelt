@@ -19,7 +19,7 @@ import orjson
 import pytest
 
 from auditor.replay import audit
-from core.logio import ChainError, repair_torn_tail, scan
+from core.logio import ChainError, repair_torn_tail, scan, scan_records
 from gate.engine import Gate
 from tests.helpers import RULES, counter_clock, line, run, run_gate
 
@@ -134,7 +134,7 @@ def test_torn_tail_is_truncated_kept_and_noted(tmp_path):
 
     with pytest.raises(ChainError, match="partial last line"):  # the auditor reports, never repairs
         list(scan(torn_copy))
-    assert audit(torn_copy, RULES).chain_error.seq == 10 and torn_copy.read_bytes() == p.read_bytes()
+    assert audit(torn_copy, RULES).chain_error.seq == 11 and torn_copy.read_bytes() == p.read_bytes()
 
     async def restart():
         g = Gate(RULES, p, "per_order", clock=counter_clock(1))
@@ -145,13 +145,14 @@ def test_torn_tail_is_truncated_kept_and_noted(tmp_path):
 
     g, reply = run(restart())
     note = g.recovery_note
-    assert g.book.last_seq == 10 and reply["seq"] == 10  # 9 intact events, the new one becomes seq 10
+    assert g.book.last_seq == 11 and reply["seq"] == 11  # the rules record + 9 intact orders = 10 lines, the new one becomes seq 11
     assert note["action"] == "truncated_torn_tail" and note["bytes_removed"] == len(removed)
     assert note["removed_sha256"] == hashlib.sha256(removed).hexdigest()
     assert (tmp_path / note["removed_saved_as"]).read_bytes() == removed  # the bytes are kept
     logged = [json.loads(l) for l in (tmp_path / "g.log.recovery.jsonl").read_text().splitlines()]
     assert logged == [note]
-    assert [e.seq for e in scan(p)] == list(range(1, 11))
+    assert [e.seq for e in scan(p)] == list(range(2, 12))  # orders only; seq 1 is the rules record
+    assert len(g.book.rules_records) == 1 and g.rules_record is None  # the restart ran the same rules: no second record
 
 
 @pytest.mark.parametrize("tail", [b"{\"seq\":11,\"garb", b"x"])
@@ -181,3 +182,23 @@ def test_log_that_is_only_a_torn_line_becomes_empty(tmp_path):
     p = tmp_path / "g.log"
     p.write_bytes(b"{\"seq\":1")
     assert repair_torn_tail(p)["kept_bytes"] == 0 and p.read_bytes() == b""
+
+
+def test_a_log_that_is_only_a_torn_rules_record_gets_a_fresh_one_at_start(tmp_path):
+    """Crash while the start-up rules record was being written: the partial line was never acknowledged (nothing is
+    acknowledged before it is durable), so it is repaired away and the next start records the rules again at seq 1."""
+    p = tmp_path / "g.log"
+    run(run_gate(p, []))
+    rec = p.read_bytes()
+    assert json.loads(rec)["type"] == "RULES"
+    p.write_bytes(rec[:-20])  # cut mid-record, no newline
+
+    async def restart():
+        g = Gate(RULES, p, "per_order", clock=counter_clock(1))
+        await g.start()
+        await g.stop()
+        return g
+
+    g = run(restart())
+    assert g.recovery_note["bytes_removed"] == len(rec) - 20 and g.rules_record.seq == 1
+    assert [r.seq for r in scan_records(p)] == [1] and audit(p, RULES).chain_error is None

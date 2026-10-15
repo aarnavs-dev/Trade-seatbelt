@@ -6,6 +6,7 @@ import sys
 import time
 from typing import Iterator
 
+import orjson
 from pydantic import ValidationError
 
 try:
@@ -14,9 +15,10 @@ except ImportError:  # pragma: no cover (Windows)
     fcntl = None
 
 from core.canon import GENESIS, canon, event_hash
-from core.events import Event
+from core.events import CONTROL_TYPES, LOG_VERSION, Event, RulesRecord
 
 FSYNC_POLICIES = ("per_order", "batched", "none")
+SUPPORTED_LOG_VERSIONS = (LOG_VERSION,)
 
 
 class ChainError(Exception):
@@ -25,12 +27,26 @@ class ChainError(Exception):
         self.seq, self.reason = seq, reason
 
 
-def event_line(ev: Event) -> bytes:
+def event_line(ev) -> bytes:
+    """The canonical line for an Event or a control record (anything with model_dump())."""
     return canon(ev.model_dump()) + b"\n"
 
 
-def scan(path) -> Iterator[Event]:
-    """Yield verified events in order. Raises ChainError at the first bad line.
+def parse_line(raw: bytes):
+    """One line -> Event or a control record (RulesRecord). Raises ValueError if it is neither. No chain checks."""
+    try:
+        return Event.model_validate_json(raw)  # the hot path: orders are what a log is made of
+    except ValidationError:
+        pass
+    try:
+        t = orjson.loads(raw).get("type")
+        return CONTROL_TYPES[t].model_validate_json(raw)
+    except (orjson.JSONDecodeError, AttributeError, KeyError, ValidationError):
+        raise ValueError("line is not a valid event or control record") from None
+
+
+def scan_records(path) -> Iterator[Event | RulesRecord]:
+    """Yield every verified line in order, orders AND control records. Raises ChainError at the first bad line.
 
     The reported seq is the position where the chain first fails to hold. For an edited line that
     is the line itself; for a deleted or reordered line it is the first position that is wrong.
@@ -43,8 +59,8 @@ def scan(path) -> Iterator[Event]:
             if not raw.endswith(b"\n"):
                 raise ChainError(expected, "partial last line")
             try:
-                ev = Event.model_validate_json(raw)
-            except ValidationError:
+                ev = parse_line(raw)
+            except ValueError:
                 raise ChainError(expected, "line is not a valid event") from None
             if ev.seq != expected:
                 raise ChainError(expected, f"found seq {ev.seq}, expected {expected} "
@@ -55,8 +71,18 @@ def scan(path) -> Iterator[Event]:
                 raise ChainError(expected, "hash mismatch, line content was altered")
             if raw != event_line(ev):
                 raise ChainError(expected, "line is not in canonical form")
+            if not isinstance(ev, Event) and ev.log_version not in SUPPORTED_LOG_VERSIONS:
+                raise ChainError(expected, f"unsupported log_version {ev.log_version}")
             prev, expected = ev.hash, expected + 1
             yield ev
+
+
+def scan(path) -> Iterator[Event]:
+    """Yield the verified ORDER events in order. The whole chain is verified, control records included, but they are not
+    yielded, so a reader that only cares about orders never sees them (their seq numbers show as gaps)."""
+    for rec in scan_records(path):
+        if isinstance(rec, Event):
+            yield rec
 
 
 def repair_torn_tail(path) -> dict | None:

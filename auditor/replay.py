@@ -4,7 +4,9 @@ from collections import Counter
 from dataclasses import dataclass, field
 
 from core.book import Book
-from core.logio import ChainError, scan
+from core.events import Event
+from core.logio import ChainError, scan_records
+from core.rules import rules_hash
 
 
 @dataclass
@@ -17,13 +19,30 @@ class Audit:
     chain_error: ChainError | None = None
     fills: list = field(default_factory=list)      # verified ACCEPT events, in seq order (for reconciliation)
     rejected: dict = field(default_factory=dict)   # client_order_id -> (seq, reason_code) of its first REJECT
+    supplied_rules_hash: str = ""                  # hash of the rules the auditor was given
+    rules_records: list = field(default_factory=list)  # [(seq, ts, rules_hash)] control records, in order
+    unrecorded_events: int = 0                     # order events before the first rules record (all of them in a v1 log)
 
 
 def audit(log_path, rules) -> Audit:
-    a = Audit(Book(rules))
+    a = Audit(Book(rules), supplied_rules_hash=rules_hash(rules))
     book, prev_ts = a.book, 0
     try:
-        for ev in scan(log_path):
+        for ev in scan_records(log_path):
+            if not isinstance(ev, Event):  # a control record: check it, apply it, never count it as an order
+                if ev.ts < prev_ts:
+                    a.findings.append({"seq": ev.seq, "kind": "TIME_REGRESSION", "detail": f"ts {ev.ts} is before {prev_ts}"})
+                if ev.rules_hash != a.supplied_rules_hash:
+                    a.findings.append({"seq": ev.seq, "kind": "RULES_MISMATCH", "detail":
+                                       f"the log records rules {ev.rules_hash[:12]} here but the rules file given to the auditor "
+                                       f"hashes to {a.supplied_rules_hash[:12]}; orders after this line were re-checked against "
+                                       "the supplied rules, so decisions and P&L below may not reflect what the gate enforced"})
+                book.apply_record(ev)
+                a.rules_records.append((ev.seq, ev.ts, ev.rules_hash))
+                prev_ts = ev.ts
+                continue
+            if not a.rules_records:
+                a.unrecorded_events += 1
             v = book.verdict(ev, ev.ts)
             if (v.accept, v.code) != (ev.decision == "ACCEPT", ev.reason_code):
                 a.findings.append({"seq": ev.seq, "kind": "DECISION_MISMATCH",

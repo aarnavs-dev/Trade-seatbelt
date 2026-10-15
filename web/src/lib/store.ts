@@ -135,7 +135,7 @@ export class ChainStore {
       firstSeq: this.blocks[0].ev.seq,
       version: this.snap.version + 1,
       // a new demo run is a new chain: forget any tamper display
-      ...(ev.seq === 1 ? { tamper: null, verify: null } : {}),
+      ...(!last && ev.seq <= 2 ? { tamper: null, verify: null } : {}), // the first order of a log is seq 1 (v1) or seq 2 (after the rules record)
     })
     if (this.reportOn) this.refreshReport(350)
   }

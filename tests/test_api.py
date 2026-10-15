@@ -73,7 +73,8 @@ def test_binds_to_loopback_only(monkeypatch):
 # ---------------------------------------------------------------- /report
 def test_report_of_a_log(client):
     r = client.get("/report").json()
-    assert r["chain"] == {"ok": True, "events_verified": 13, "first_bad_seq": None, "reason": None}
+    assert r["chain"] == {"ok": True, "events_verified": 13, "records_verified": 13, "first_bad_seq": None, "reason": None}
+    assert r["rules_record"]["status"] == "NOT_RECORDED" and r["rules_record"]["log_version"] == 1  # the bundled log is a v1 log
     assert r["counts"]["accepted"] == 12 and r["source"] == "demo" and r["rules"]["max_position_per_symbol"] == 100
 
 
@@ -199,7 +200,8 @@ def test_demo_streams_events_live(client):
     client.post("/demo/run?delay_ms=0")
     wait_done(client)
     f = frames(client.get("/events/stream?follow=false").text)
-    assert [b[1]["seq"] for b in f if b[0] == "block"] == list(range(1, 26))
+    assert [b[1]["seq"] for b in f if b[0] == "block"] == list(range(2, 27))  # 25 orders
+    assert [(b[1]["seq"], b[1]["type"]) for b in f if b[0] == "control"] == [(1, "RULES")]  # the rules record: own event, not a block
 
 
 # ---------------------------------------------------------------- /tamper
@@ -385,3 +387,35 @@ def test_demo_fails_with_a_clear_message_if_the_gate_does_not_start(tmp_path, mo
         s = c.get("/demo/status").json()
         assert s["state"] == "failed" and "gate did not start in time" in s["error"], s
         assert c.post("/demo/run?delay_ms=0").status_code == 202  # and a new run is accepted afterwards
+
+
+# ---------------------------------------------------------------- a v2 log (the gate recorded its rules)
+@pytest.fixture
+def v2_client(tmp_path):
+    from tests.helpers import line, run, run_gate
+    p = tmp_path / "v2.log"
+    run(run_gate(p, [line(f"V{i}", "BUY" if i % 2 else "SELL", "AAPL", 5, 19000) for i in range(1, 5)]))  # rules record + 4 orders
+    with TestClient(create_app(Settings(default_demo_log=p, sse_poll=0.01))) as c:
+        yield c, p
+
+
+def test_report_of_a_v2_log_pins_the_rules(v2_client):
+    c, _ = v2_client
+    r = c.get("/report").json()
+    assert r["chain"]["events_verified"] == 4 and r["chain"]["records_verified"] == 5 and r["counts"]["events"] == 4
+    assert r["rules_record"]["status"] == "MATCH" and [x["seq"] for x in r["rules_record"]["recorded"]] == [1]
+
+
+def test_tamper_on_a_v2_log_edits_an_order_never_the_rules_record(v2_client):
+    c, p = v2_client
+    before = digest(p)
+    j = c.post("/tamper").json()
+    assert j["tampered_event"].get("client_order_id") and j["first_bad_seq"] == j["tampered_seq"] and j["tampered_seq"] >= 2
+    assert digest(p) == before
+
+
+def test_the_stream_sends_the_rules_record_as_a_control_frame(v2_client):
+    c, _ = v2_client
+    f = frames(c.get("/events/stream?follow=false").text)
+    assert [(b[1]["seq"], b[1]["type"]) for b in f if b[0] == "control"] == [(1, "RULES")]
+    assert [b[1]["seq"] for b in f if b[0] == "block"] == [2, 3, 4, 5]

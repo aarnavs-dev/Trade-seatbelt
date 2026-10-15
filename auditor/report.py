@@ -4,8 +4,27 @@ from auditor.replay import Audit
 from core.money import fmt
 
 SCOPE = ("Simulated orders only. Verifies the log's hash chain and replays it. It cannot detect "
-         "deletion of the newest lines (the chain has no external anchor) and P&L uses the fee "
-         "schedule in the rules file passed to the auditor.")
+         "deletion of the newest lines (the chain has no external anchor). P&L uses the rules file passed to "
+         "the auditor; the rules line says whether the log records the rules its orders were decided under.")
+
+
+def rules_record_summary(a: Audit) -> dict:
+    """Whether the log pins the rules its orders were decided under, and whether the rules given to the auditor are those.
+    NOT_RECORDED: no rules record at all (a v1 log): the chain is verified but the P&L is only 'under the rules file you gave'.
+    PARTIAL: some orders came before the first record, so those are not pinned. MISMATCH: a recorded hash differs from the
+    supplied rules (also a RULES_MISMATCH finding). MATCH: every record equals the supplied rules and nothing is unrecorded."""
+    recs = a.rules_records
+    if not recs:
+        status = "NOT_RECORDED"
+    elif any(h != a.supplied_rules_hash for _, _, h in recs):
+        status = "MISMATCH"
+    elif a.unrecorded_events:
+        status = "PARTIAL"
+    else:
+        status = "MATCH"
+    return {"status": status, "log_version": 2 if recs else 1, "supplied_rules_hash": a.supplied_rules_hash,
+            "recorded": [{"seq": s, "ts": t, "rules_hash": h} for s, t, h in recs],
+            "unrecorded_events": a.unrecorded_events}
 
 
 def build_report(a: Audit, log_path: str, recon: dict | None = None) -> dict:
@@ -13,7 +32,7 @@ def build_report(a: Audit, log_path: str, recon: dict | None = None) -> dict:
     ce = a.chain_error
     r = {
         "log": str(log_path),
-        "chain": {"ok": ce is None, "events_verified": a.events,
+        "chain": {"ok": ce is None, "events_verified": a.events, "records_verified": a.events + len(a.rules_records),
                   "first_bad_seq": ce.seq if ce else None, "reason": ce.reason if ce else None},
         "partial": ce is not None,
         "counts": {"events": a.events, "accepted": a.accepted,
@@ -24,6 +43,7 @@ def build_report(a: Audit, log_path: str, recon: dict | None = None) -> dict:
         "positions": {s: q for s, q in sorted(led.pos.items()) if q},
         "cash": led.cash,
         "cash_identity_ok": led.identity_ok(),
+        "rules_record": rules_record_summary(a),
         "findings": a.findings,
         "head_hash": b.last_hash,
         "state_hash": b.state_hash(),
@@ -46,6 +66,7 @@ def to_markdown(r: dict) -> str:
     else:
         L.append(f"**Chain: BROKEN at seq {ch['first_bad_seq']}**: {ch['reason']}")
         L.append(f"Figures below cover only the {ch['events_verified']} events before the break.")
+    L += ["", *_rules_md(r["rules_record"])]
     L += ["", f"- Events: {c['events']} ({c['accepted']} accepted, {c['rejected']} rejected)"]
     for k, v in c["rejects_by_reason"].items():
         L.append(f"  - {k}: {v}")
@@ -63,6 +84,23 @@ def to_markdown(r: dict) -> str:
         L += _recon_md(r["reconciliation"])
     L += ["", f"head_hash `{r['head_hash']}`", f"state_hash `{r['state_hash']}`", "", f"_{r['scope']}_", ""]
     return "\n".join(L)
+
+
+def _rules_md(rr: dict) -> list[str]:
+    st, sup = rr["status"], rr["supplied_rules_hash"][:12]
+    first = rr["recorded"][0]["seq"] if rr["recorded"] else None
+    if st == "NOT_RECORDED":
+        return [f"**Rules: NOT RECORDED.** This log does not record which rules the gate ran under (a v1 log). The chain is "
+                f"verified, but the figures below are only 'what these orders give under the rules file supplied' (hash {sup}); "
+                "they are not pinned to what the gate enforced."]
+    recorded = ", ".join(f"seq {x['seq']}: {x['rules_hash'][:12]}" for x in rr["recorded"])
+    if st == "MISMATCH":
+        return [f"**Rules: MISMATCH.** The log records {recorded}; the rules file supplied hashes to {sup}. "
+                "The decisions and P&L below were computed with the supplied rules, not the recorded ones (see the RULES_MISMATCH findings)."]
+    if st == "PARTIAL":
+        return [f"**Rules: PARTIAL.** The rules file supplied ({sup}) matches the log's record ({recorded}), but "
+                f"{rr['unrecorded_events']} order(s) before seq {first} come from before rules were recorded and are not pinned."]
+    return [f"**Rules: MATCH.** The rules file supplied ({sup}) equals the rules recorded in the log ({recorded})."]
 
 
 def _recon_md(rc: dict) -> list[str]:

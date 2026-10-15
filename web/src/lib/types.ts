@@ -18,7 +18,8 @@ export interface LogEvent {
 
 export interface Report {
   source: Source
-  chain: { ok: boolean; events_verified: number; first_bad_seq: number | null; reason: string | null }
+  chain: { ok: boolean; events_verified: number; records_verified?: number; first_bad_seq: number | null; reason: string | null }
+  rules_record?: RulesRecordSummary
   counts: { events: number; accepted: number; rejected: number; rejects_by_reason: Record<string, number> }
   pnl: {
     realized_gross: number
@@ -34,6 +35,15 @@ export interface Report {
   state_hash: string
   scope: string
   rules: Rules
+}
+
+/** Whether the log records the rules its orders were decided under (see docs/INVARIANTS.md, row 21). */
+export interface RulesRecordSummary {
+  status: 'MATCH' | 'MISMATCH' | 'PARTIAL' | 'NOT_RECORDED'
+  log_version: 1 | 2
+  supplied_rules_hash: string
+  recorded: { seq: number; ts: number; rules_hash: string }[]
+  unrecorded_events: number
 }
 
 export interface Rules {

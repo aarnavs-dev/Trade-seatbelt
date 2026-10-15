@@ -5,7 +5,7 @@ from pathlib import Path
 
 import orjson
 
-from core.logio import ChainError, scan
+from core.logio import ChainError, scan_records
 
 MAX_BYTES = 64 << 20
 
@@ -23,6 +23,10 @@ def tamper_copy(log: Path) -> dict:
         raise NothingToTamper("the log is too large to copy for a tamper demo")
     lines = log.read_bytes().splitlines(keepends=True)
     seq = max(1, len(lines) // 2)
+    while seq <= len(lines) and "qty" not in orjson.loads(lines[seq - 1]):  # a control record has no qty: take the next order
+        seq += 1
+    if seq > len(lines):
+        raise NothingToTamper("the log has no order to tamper with")
     ev = orjson.loads(lines[seq - 1])
     before, ev["qty"] = ev["qty"], ev["qty"] + 1
     lines[seq - 1] = orjson.dumps(ev, option=orjson.OPT_SORT_KEYS) + b"\n"
@@ -31,13 +35,13 @@ def tamper_copy(log: Path) -> dict:
         copy.write_bytes(b"".join(lines))
         verified, err = 0, None
         try:
-            for _ in scan(copy):
+            for _ in scan_records(copy):
                 verified += 1
         except ChainError as e:
             err = e
     return {
         "tampered_seq": seq, "field": "qty", "before": before, "after": ev["qty"], "tampered_event": ev,
-        "events_total": len(lines), "events_verified_before_break": verified,
+        "events_total": len(lines), "events_verified_before_break": verified,  # lines (orders and control records)
         "chain_ok": err is None, "first_bad_seq": err.seq if err else None,
         "reason": err.reason if err else None, "message": str(err) if err else "chain verifies",
         "note": "Edited a temporary copy; the real log was not modified.",

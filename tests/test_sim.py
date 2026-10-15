@@ -272,7 +272,7 @@ def test_a_headless_run_logs_exactly_what_it_sent_through_the_gate(tmp_path, cap
     a = audit(d / "gate.log", load_rules(d / "rules.yaml"))
     assert a.chain_error is None and a.findings == [] and a.events == 150      # the gate wrote it and its own rules agree
     sent = take(31, "impulsive", 150, read_json(d / "market_snapshot.json")["anchors_minor"])
-    logged = [json.loads(l) for l in (d / "gate.log").read_text().splitlines()]
+    logged = [e for e in (json.loads(l) for l in (d / "gate.log").read_text().splitlines()) if "type" not in e]  # orders only
     assert [e["client_order_id"] for e in logged] == [i.order["client_order_id"] for i in sent]
     assert [(e["symbol"], e["side"], e["qty"], e["price"]) for e in logged] == [tuple(i.order[k] for k in ("symbol", "side", "qty", "price")) for i in sent]
     st = read_json(d / "sim.status.json")

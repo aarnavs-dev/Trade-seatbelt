@@ -1,10 +1,12 @@
 """Rules schema and the pure check() function. No I/O, no clock, no hidden state."""
 
+import hashlib
 from typing import Literal, NamedTuple
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from core.canon import canon
 from core.events import Reason
 
 _M = ConfigDict(strict=True, frozen=True, extra="forbid")
@@ -46,6 +48,12 @@ class Rules(BaseModel):
 def load_rules(path) -> Rules:
     with open(path) as f:
         return Rules.model_validate(yaml.safe_load(f))
+
+
+def rules_hash(rules: Rules) -> str:
+    """SHA-256 of the canonical JSON of the PARSED rules (every field check() and the fee schedule read). Comments, key
+    order and whitespace in the YAML do not change it; any change to a limit, a symbol, the fees or the kill switch does."""
+    return hashlib.sha256(canon(rules.model_dump())).hexdigest()
 
 
 class Verdict(NamedTuple):

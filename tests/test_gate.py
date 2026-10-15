@@ -18,8 +18,8 @@ def test_duplicate_returns_original_and_counts_once(tmp_path):
     again = line("D1", "SELL", "AAPL", 99, 1)  # same id, different payload: original wins
     out, gate = run(run_gate(p, [first, again, first]))
     assert [o["duplicate"] for o in out] == [False, True, True]
-    assert out[1]["seq"] == out[2]["seq"] == 1 and out[1]["hash"] == out[0]["hash"]
-    assert len(p.read_bytes().splitlines()) == 1
+    assert out[1]["seq"] == out[2]["seq"] == 2 and out[1]["hash"] == out[0]["hash"]  # seq 1 is the gate's rules record
+    assert len(list(scan(p))) == 1 and len(p.read_bytes().splitlines()) == 2  # one order line (plus the rules record)
     assert gate.book.ledger.position("AAPL") == 10 and gate.book.ledger.fees == 50
 
 
@@ -27,7 +27,8 @@ def test_restart_rebuilds_state_and_dedupe(tmp_path):
     p = tmp_path / "g.log"
     _, g1 = run(run_gate(p, [line("A", "BUY", "AAPL", 10, 19000), line("B", "BUY", "AAPL", 5, 19000)]))
     out, g2 = run(run_gate(p, [line("A", "BUY", "AAPL", 10, 19000), line("C", "SELL", "AAPL", 15, 19100)]))
-    assert out[0]["duplicate"] and out[1]["seq"] == 3
+    assert out[0]["duplicate"] and out[1]["seq"] == 4  # 1 = rules record, A = 2, B = 3, C = 4
+    assert len(g2.book.rules_records) == 1  # the restart ran the same rules, so it wrote no second record
     g3 = Gate(RULES, p)
 
     async def boot():
@@ -44,7 +45,7 @@ def test_invalid_orders_are_errors_not_log_lines(tmp_path):
            b'{"client_order_id":"x","side":"BUY","symbol":"AAPL","qty":1.5,"price":19000}\n',
            b'{"client_order_id":"x","side":"BUY","symbol":"AAPL","qty":1,"price":190.0}\n']
     out, _ = run(run_gate(p, bad))
-    assert all("error" in o for o in out) and not p.exists() or p.read_bytes() == b""
+    assert all("error" in o for o in out) and list(scan(p)) == []  # no order line; only the gate's rules record is in the log
 
 
 def test_fsync_policies_give_identical_logs(tmp_path):
@@ -138,7 +139,7 @@ def test_invariant1_concurrent_clients(tmp_path):
     run(main())
     assert_no_breach(p)
     evs = list(scan(p))
-    assert [e.seq for e in evs] == list(range(1, len(evs) + 1)) and len(evs) == 480
+    assert [e.seq for e in evs] == list(range(2, len(evs) + 2)) and len(evs) == 480  # seq 1 is the rules record
     assert audit(p, RULES).findings == []
 
 
@@ -156,4 +157,4 @@ def test_tcp_roundtrip_in_order_with_pipelining(tmp_path):
         return out
 
     out = run(main())
-    assert [o["seq"] for o in out[:50]] == list(range(1, 51)) and "error" in out[50]
+    assert [o["seq"] for o in out[:50]] == list(range(2, 52)) and "error" in out[50]  # seq 1 is the rules record

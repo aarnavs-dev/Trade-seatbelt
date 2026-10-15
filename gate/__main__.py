@@ -5,7 +5,7 @@ import os
 import signal
 
 from core.logio import FSYNC_POLICIES, ChainError
-from core.rules import load_rules
+from core.rules import load_rules, rules_hash
 from gate.engine import Gate
 from gate.server import start_server
 
@@ -18,7 +18,8 @@ async def main(args) -> None:
         raise SystemExit(f"refusing to start: {e}")
     server = await start_server(gate, args.host, args.port)
     print(f"gate listening on {args.host}:{args.port} log={args.log} fsync={args.fsync}{'+F_FULLFSYNC' if args.full_fsync else ''} "
-          f"batch_max={gate.batch_max} replayed_events={gate.book.last_seq} "
+          f"batch_max={gate.batch_max} replayed_events={gate.replayed} "
+          f"rules_hash={rules_hash(gate.rules)[:12]} rules_record={'seq ' + str(gate.rules_record.seq) if gate.rules_record else 'unchanged'} "
           f"torn_tail_bytes_removed={gate.recovery_note['bytes_removed'] if gate.recovery_note else 0}", flush=True)
     stop = asyncio.Event()
     profile_path = os.environ.get("GATE_PROFILE")  # benchmark hook, off by default

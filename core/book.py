@@ -4,9 +4,9 @@ import hashlib
 from collections import deque
 
 from core.canon import GENESIS, canon, event_hash
-from core.events import Event, Order
+from core.events import LOG_VERSION, Event, Order, RulesRecord
 from core.ledger import Ledger
-from core.rules import Rules, Verdict, check
+from core.rules import Rules, Verdict, check, rules_hash
 
 WINDOW_NS = 60 * 10**9
 
@@ -22,6 +22,7 @@ class Book:
         self.order_times: deque[int] = deque()
         self.loss_streak = 0
         self.cooldown_until = 0
+        self.rules_records: list[RulesRecord] = []  # control records seen, in order; empty for a v1 log
 
     @property
     def realized_net(self) -> int:
@@ -42,6 +43,21 @@ class Book:
             decision="ACCEPT" if v.accept else "REJECT", reason_code=v.code, reason_text=v.text,
         )
         return Event(**body, prev_hash=self.last_hash, hash=event_hash(self.last_hash, body))
+
+    def make_rules_record(self, ts: int) -> RulesRecord:
+        """The control record for the rules this Book decides with, chained after the last line."""
+        body = dict(type="RULES", seq=self.last_seq + 1, ts=ts, log_version=LOG_VERSION, rules_hash=rules_hash(self.rules))
+        return RulesRecord(**body, prev_hash=self.last_hash, hash=event_hash(self.last_hash, body))
+
+    def apply_record(self, rec: RulesRecord) -> None:
+        """A control record moves the chain head and the clock floor; it is not an order and changes no order state."""
+        self.last_seq, self.last_hash, self.last_ts = rec.seq, rec.hash, rec.ts
+        self.rules_records.append(rec)
+
+    @property
+    def recorded_rules_hash(self) -> str | None:
+        """The rules hash in force at the end of the log so far, or None if the log has never recorded one (v1)."""
+        return self.rules_records[-1].rules_hash if self.rules_records else None
 
     def apply(self, ev: Event) -> None:
         self.last_seq, self.last_hash, self.last_ts = ev.seq, ev.hash, ev.ts
@@ -73,4 +89,6 @@ class Book:
             "loss_streak": self.loss_streak, "cooldown_until": self.cooldown_until,
             "order_times": list(self.order_times),
         }
+        if self.rules_records:  # absent for a v1 log, so a v1 log keeps the state hash it always had
+            state["rules_records"] = [[r.seq, r.ts, r.rules_hash] for r in self.rules_records]
         return hashlib.sha256(canon(state)).hexdigest()
