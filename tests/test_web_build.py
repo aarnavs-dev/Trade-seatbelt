@@ -1,4 +1,4 @@
-"""Build check for the web app (type-check + production build, including the /app/follow page). Skipped without Node."""
+"""Build check for the web app (type-check + production build, including the /follow page). Skipped without Node."""
 
 import shutil
 import subprocess
