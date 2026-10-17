@@ -61,6 +61,18 @@ What this project does not do, does not guarantee, or has not shown. Measured fi
 
 ## What the log can and cannot prove
 
+- **Where followed signals come from is shown, not verified, on the page.** The Signal source panel states what the run's manifest
+  says (live devnet read, saved copy, or local feed), the publisher key the copier was told to trust, and the first transaction. The
+  copier itself only accepts signals whose signer is on its allowlist; the page does not re-check signatures. The devnet path has
+  never been exercised against the real network by the test suite (it uses fakes), and devnet can be reset, so a transaction link may
+  stop resolving. What goes on chain today is the leader's *signal* (symbol, side, size, reference price), not a hash; none of the
+  follower's orders, positions or limits are published.
+- **Why copied trades get skipped (one measured session, not a general result).** Real yfinance replay of 2026-10-15, scale 1/1,
+  leaders orb / momentum / meanrev (8 / 22 / 6 signals): under the repo limits (position 100) nothing was skipped or blocked; at the
+  Cautious preset (position 25, band 2%) 1 signal each was skipped (`SELL_WITHOUT_POSITION`) and 1 to 2 blocked; at a position limit of 5
+  (below the leaders' 10 shares) every BUY was blocked by `MAX_POSITION`, so every later SELL was skipped and 0 trades were copied.
+  A skipped SELL follows a blocked BUY, not an empty follower: a starter portfolio would not change that, and starter shares would
+  use up position headroom. See PLAN.md (side work) for the open decision.
 - **The rules record pins *which* rules, not *what* they said.** The log holds a hash of the parsed rules, not the rules. To
   audit you still need the rules file; if it is lost, only the hash remains and nothing can re-check the decisions. The hash is of
   the parsed `Rules` model, so adding a field to the rules schema changes the hash of an unchanged YAML file; a log written before

@@ -53,6 +53,12 @@ Design (agreed): the rules hash lives in a **control record inside the hash chai
 - [x] Suite 398 passed / 1 skipped (also on a clean clone of the final commit); demo, recon, web build + unit + Playwright pass; quick bench valid (but taken in macOS Low Power Mode: no performance claim; re-run on AC power).
 - Found and fixed on the way: bench runs reused a stale `bench/runs/<id>/gate.log` (profile runs went invalid on a second run).
 
+### Side work, approved 2026-10-17 (outside the phases)
+Starter portfolio + clear Solana/leader provenance, in two parts.
+- **Check first (done):** a typical follow session was measured before changing anything (table in `docs/LIMITATIONS.md`). Result: with the repo limits nothing is skipped; copied trades are skipped almost entirely when the position limit is below the leaders' 10 shares (every BUY blocked by `MAX_POSITION`, so every SELL skipped). That does not support "the follower holds nothing" as the main cause.
+- **Part 2: DONE.** Signal source panel (leader, source actually used incl. fallback and why, publisher key, first transaction with Explorer link, what Solana does / does not do), per-row source badges, counts split into "skipped before the gate" and "blocked by your rules". Invariant 22.
+- **Part 1 (starter portfolio): ON HOLD** by decision. Design notes if it is revived: a `STARTER` control record through `CONTROL_TYPES` (symbols, qty, cost basis, labelled simulated); `Book`/`Ledger` replay with FIFO lots and the cash identity; P&L from cost basis; never counted as orders; v1 and records-free logs unchanged; opening positions must respect the position limit (so they use headroom). Open question: a leader SELL would sell starter shares the follower never copied in. A smaller alternative for the real cause, not approved: clip a copied BUY to the remaining position headroom.
+
 ### Phase 3: Checkpoints and the anchor interface (local first)
 - [ ] Anchor interface with a **local backend** first. No network needed.
 - [ ] Checkpoint = `seq`, `head_hash`, rules hash. Timing: every N events or 5 minutes, whichever comes first, plus one at session end.

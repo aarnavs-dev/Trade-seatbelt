@@ -72,6 +72,7 @@ Listed with their tests in `docs/INVARIANTS.md` (21 rows). Each needs a test tha
 ## Current state
 Verified from a clean clone of `bb5c23f` on 2026-10-15 (before Phase 2): `make setup`, `demo`, `demo-recon`, `test`, `web-test`, `web-build`, `bench` (20k x1, all valid), `api`, `web`, `shots.mjs`, `size.mjs`.
 After Phase 2, re-checked from a clean clone of `dba7cca`: `make test` 398 passed, 1 skipped (Linux-only); `demo` (now also tampers the rules record), `demo-recon`, `web-test`, `web-build`, `shots.mjs`, and a 20k x1 `bench` (all runs valid) pass. The committed `docs/PERFORMANCE.md` predates the rules record and has not been re-run.
+`/follow` now has a Signal source panel, per-row source badges and "skipped before the gate" / "blocked by your rules" counts (invariant 22); the starter-portfolio idea is on hold (see PLAN.md, side work).
 Not working or not built:
 - `/dashboard` and `/audit` are **placeholders** (mini chain; Run demo / Verify / Tamper only).
 - No UI for the simulator, reconciliation or counterfactual (their APIs exist).
