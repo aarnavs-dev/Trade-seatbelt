@@ -215,3 +215,79 @@ def test_only_one_run_at_a_time_and_stop_ends_it(tmp_path):
             time.sleep(0.1)
         s = c.get(f"/follow/{run}/summary").json()
     assert s["state"] == "stopped" and s["seen"] < s["total_in_feed"]
+
+
+# ---------------------------------------------------------------- where the signals came from (signal_source, row source)
+def with_feed(tmp_path, feed):
+    """known_run (6 local-feed rows + 1 row carrying a transaction) with the manifest's feed block replaced."""
+    d = known_run(tmp_path)
+    m = orjson.loads((d / "manifest.json").read_bytes())
+    m["feed"] = feed
+    (d / "manifest.json").write_bytes(orjson.dumps(m))
+    return d
+
+
+def summary_and_rows(tmp_path, d):
+    with make_client(tmp_path) as c:
+        s = c.get(f"/follow/{d.name}/summary").json()
+        rows = [orjson.loads(e["data"]) for e in sse(c.get(f"/follow/{d.name}/stream").text) if e["event"] == "signal"]
+    return s, rows
+
+
+def test_a_local_feed_run_is_labelled_as_not_from_solana(tmp_path):
+    s, rows = summary_and_rows(tmp_path, known_run(tmp_path))
+    ss = s["signal_source"]
+    assert ss["kind"] == "local" and "NOT from Solana" in ss["label"] and ss["live_chain_read"] is False
+    assert ss["fallback"] is False and ss["fallback_why"] is None and ss["publisher_key"] is None
+    assert ss["leader"]["id"] == "momentum" and ss["leader"]["name"] == "Momentum" and ss["leader"]["strategy"]
+    assert ss["data"]["synthetic"] is True and ss["data"]["label"] == "SYNTHETIC FIXTURE"
+    assert [r["source"] for r in rows] == ["local"] * 6 + ["chain"]       # a row is chain only if it carries a transaction
+
+
+def test_a_live_chain_run_names_the_publisher_and_the_first_transaction(tmp_path):
+    feed = {"source": "chain", "badge": "chain (devnet)", "requested": "chain", "leader": "Leader111", "rpc_host": "api.devnet.solana.com"}
+    s, rows = summary_and_rows(tmp_path, with_feed(tmp_path, feed))
+    ss = s["signal_source"]
+    assert ss["kind"] == "chain" and ss["label"] == "Solana devnet" and ss["live_chain_read"] is True and ss["fallback"] is False
+    assert ss["publisher_key"] == "Leader111" and ss["publisher_explorer_url"] == "https://explorer.solana.com/address/Leader111?cluster=devnet"
+    assert (ss["first_tx"], ss["with_transaction"], ss["signals"]) == ("5abcTx", 1, 7)
+    assert ss["first_tx_explorer_url"] == "https://explorer.solana.com/tx/5abcTx?cluster=devnet" and ss["rpc_host"] == "api.devnet.solana.com"
+    # even in a chain run, a signal with no transaction is never shown as chain data
+    assert [r["source"] for r in rows if not r["tx"]] == ["local"] * 6 and rows[6]["source"] == "chain"
+
+
+def test_a_saved_copy_is_not_called_a_live_chain_read_and_counts_as_a_fallback(tmp_path):
+    feed = {"source": "chain cache (stale)", "badge": "chain (devnet, cached)", "requested": "chain", "leader": "Leader111",
+            "why": "devnet returned HTTP 429"}
+    s, rows = summary_and_rows(tmp_path, with_feed(tmp_path, feed))
+    ss = s["signal_source"]
+    assert ss["kind"] == "chain_cache" and "saved copy" in ss["label"] and ss["live_chain_read"] is False
+    assert ss["fallback"] is True and ss["fallback_why"] == "devnet returned HTTP 429" and ss["publisher_key"] == "Leader111"
+    assert rows[6]["source"] == "chain_cache"
+
+
+def test_falling_back_from_chain_to_the_local_feed_is_stated_with_its_reason(tmp_path):
+    feed = {"source": "local feed", "badge": "local feed", "requested": "chain", "why": "the leader has published no signals on devnet yet"}
+    s, _ = summary_and_rows(tmp_path, with_feed(tmp_path, feed))
+    ss = s["signal_source"]
+    assert ss["kind"] == "local" and ss["fallback"] is True and "no signals on devnet" in ss["fallback_why"] and ss["publisher_key"] is None
+
+
+def test_asking_for_a_local_feed_is_not_a_fallback(tmp_path):
+    s, _ = summary_and_rows(tmp_path, with_feed(tmp_path, {"source": "local feed", "badge": "local feed"}))
+    assert s["signal_source"]["fallback"] is False
+
+
+@pytest.mark.parametrize("feed", [{}, {"source": "something new"}, {"badge": "chain (devnet)"}])
+def test_a_missing_or_unknown_feed_source_never_reads_as_chain(tmp_path, feed):
+    s, _ = summary_and_rows(tmp_path, with_feed(tmp_path, feed))
+    assert s["signal_source"]["kind"] == "local" and s["signal_source"]["live_chain_read"] is False
+
+
+def test_skipped_before_the_gate_and_blocked_by_your_rules_are_the_two_existing_counts(tmp_path):
+    s, _ = summary_and_rows(tmp_path, known_run(tmp_path))
+    assert (s["skipped_before_gate"], s["blocked_by_rules"]) == (s["stopped"], s["rejected"]) == (3, 1)
+    assert s["skipped_before_gate_by_reason"] == {"DUPLICATE_SIGNAL": 1, "INVALID_SIGNAL": 1, "SELL_WITHOUT_POSITION": 1}
+    assert s["blocked_by_rules_by_reason"] == {"MAX_POSITION": 1}
+    # every signal is exactly one of: copied (clipped ones included), skipped before the gate, blocked by the rules
+    assert s["copied"] + s["skipped_before_gate"] + s["blocked_by_rules"] == s["seen"]

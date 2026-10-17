@@ -9,12 +9,21 @@ import orjson
 from copier import ledger
 from copier.copier import CLIPPED, order_id_for
 from copier.feed import read_local
+from sim.runfiles import read_json
 from core.events import Event
 from core.logio import parse_line
 from leaders.signal import SignalError, validate
 
 COPIED, STOPPED, REJECTED, CLIP = "COPIED", "STOPPED_BY_COPIER", "REJECTED_BY_RULES", "CLIPPED"
 EXPLORER = "https://explorer.solana.com/tx/{}?cluster=devnet"
+SRC_CHAIN, SRC_CACHE, SRC_LOCAL = "chain", "chain_cache", "local"
+
+
+def feed_kind(feed: dict) -> str:
+    """What the run's manifest says its signals were read from: chain (read live from devnet this run), chain_cache (a saved
+    copy of an earlier devnet read) or local (generated on this machine). Unknown or missing means local: never chain by default."""
+    src = (feed or {}).get("source", "")
+    return SRC_CHAIN if src == "chain" else SRC_CACHE if str(src).startswith("chain cache") else SRC_LOCAL
 
 
 def gate_events(path) -> dict:
@@ -51,6 +60,7 @@ def build_rows(run_dir) -> tuple[list[dict], int, int]:
             plain = {x["seq"]: x["detail"] for x in explain_events(list(events.values()), load_rules(d / "rules.yaml"))}
         except (OSError, ValueError):
             plain = {}
+    run_kind = feed_kind((read_json(d / "manifest.json") or {}).get("feed", {}))
     p, seen, rows = 0, set(), []
     for n, inc in enumerate(feed, 1):
         raw = inc.raw if isinstance(inc.raw, dict) else {}
@@ -76,6 +86,8 @@ def build_rows(run_dir) -> tuple[list[dict], int, int]:
                "qty": raw.get("qty") if ok else None, "price": raw.get("ref_price") if ok else None,
                "leader_ts": raw.get("leader_ts") if ok else None, "tx": inc.tx, "slot": inc.slot,
                "explorer_url": EXPLORER.format(inc.tx) if inc.tx else None,
+               # a row is only ever "chain" if it carries a transaction; a local row never inherits the run's chain label
+               "source": (SRC_CACHE if run_kind == SRC_CACHE else SRC_CHAIN) if inc.tx else SRC_LOCAL,
                "gate_seq": None, "ledger_seq": None, "hash": None, "leader_signal": inc.raw if isinstance(inc.raw, dict) else None}
         if l and l["reason_code"] != CLIPPED:
             p += 1

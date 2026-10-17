@@ -21,7 +21,7 @@ from api import tail
 from api.rules_profile import read_profile
 from auditor.explain import explain_copier_log, explain_log
 from copier.config import ConfigError, validate_overrides
-from copier.rows import COPIED, CLIP, REJECTED, STOPPED, build_rows
+from copier.rows import COPIED, CLIP, REJECTED, SRC_CACHE, SRC_CHAIN, STOPPED, build_rows, feed_kind
 from core.logio import ChainError
 from core.rules import load_rules
 from sim.runfiles import RUN_ID_RE, RunError, read_json, run_dir_for
@@ -179,6 +179,34 @@ class Follows:
                 p.kill()
 
 
+SOURCE_LABEL = {SRC_CHAIN: "Solana devnet", SRC_CACHE: "Solana devnet (saved copy of an earlier read)",
+                "local": "Local feed (generated on this machine, NOT from Solana)"}
+
+
+def signal_source(m: dict, rows: list[dict]) -> dict:
+    """Where this run's signals came from, stated only from the manifest and the rows. Chain is claimed only for a
+    live devnet read; a saved copy and a local feed are labelled as what they are, and a fallback says why."""
+    feed, data = m.get("feed", {}), m.get("data", {})
+    kind = feed_kind(feed)
+    on_chain = [r for r in rows if r["tx"]]
+    fallback = feed.get("requested") == "chain" and kind != SRC_CHAIN       # asked for chain (Auto or Chain) and did not get a live read
+    why = feed.get("why") or "; ".join(feed.get("notes") or [])[:200] or None
+    name, about = LEADERS.get(m.get("leader"), (m.get("leader"), ""))
+    key = feed.get("leader") if kind != "local" else None
+    first = on_chain[0] if on_chain else None
+    return {
+        "kind": kind, "label": SOURCE_LABEL[kind], "live_chain_read": kind == SRC_CHAIN, "cluster": "devnet",
+        "fallback": fallback, "fallback_why": (why or "no reason recorded") if fallback else None, "rpc_host": feed.get("rpc_host"),
+        "leader": {"id": m.get("leader"), "name": name, "strategy": about},
+        "publisher_key": key, "publisher_explorer_url": f"https://explorer.solana.com/address/{key}?cluster=devnet" if key else None,
+        "signals": len(rows), "with_transaction": len(on_chain),
+        "first_tx": first["tx"] if first else None, "first_tx_explorer_url": first["explorer_url"] if first else None,
+        "first_slot": first["slot"] if first else None,
+        "data": {"label": m.get("data_label"), "provider": data.get("provider"), "session": data.get("session"),
+                 "synthetic": bool(data.get("synthetic"))},
+    }
+
+
 def summarize(f: Follows, d: Path) -> dict:
     m = read_json(d / "manifest.json") or {}
     rows, feed_n, _ = build_rows(d)
@@ -203,6 +231,10 @@ def summarize(f: Follows, d: Path) -> dict:
         "seen": len(rows), "copied": sum(1 for r in rows if r["status"] in (COPIED, CLIP)),
         "clipped": sum(1 for r in rows if r["status"] == CLIP), "stopped": sum(stopped.values()), "stopped_by_reason": stopped,
         "rejected": sum(rejected.values()), "rejected_by_reason": rejected, "notes": notes,
+        # the same two numbers under the names the page uses: the copier never sent these / the gate refused these under your limits
+        "skipped_before_gate": sum(stopped.values()), "skipped_before_gate_by_reason": stopped,
+        "blocked_by_rules": sum(rejected.values()), "blocked_by_rules_by_reason": rejected,
+        "signal_source": signal_source(m, rows),
         "data": data, "data_label": m.get("data_label"), "feed": feed, "leader": m.get("leader"), "follower": m.get("follower"),
         "limit_overrides": m.get("limit_overrides", {}), "pace": m.get("pace"), "copy": m.get("copy"),
         "session_limit": (read_json(d / "follow.summary.json") or {}).get("session_end"),
