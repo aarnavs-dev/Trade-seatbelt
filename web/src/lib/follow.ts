@@ -5,6 +5,8 @@ export type Status = 'COPIED' | 'STOPPED_BY_COPIER' | 'REJECTED_BY_RULES' | 'CLI
 export type Feed = 'auto' | 'chain' | 'local'
 export type Pace = 'relaxed' | 'normal' | 'fast'
 export type CopyMode = 'same' | 'percent' | 'fixed'
+/** Where one signal came from. 'chain' only ever means the row carries a Solana transaction. */
+export type SourceKind = 'chain' | 'chain_cache' | 'local'
 
 export interface Row {
   n: number
@@ -22,7 +24,27 @@ export interface Row {
   tx: string | null
   slot: number | null
   explorer_url: string | null
+  source: SourceKind
   hash: string | null
+}
+
+export interface SignalSource {
+  kind: SourceKind
+  label: string
+  live_chain_read: boolean
+  cluster: 'devnet'
+  fallback: boolean
+  fallback_why: string | null
+  rpc_host: string | null
+  leader: { id: string | null; name: string | null; strategy: string }
+  publisher_key: string | null
+  publisher_explorer_url: string | null
+  signals: number
+  with_transaction: number
+  first_tx: string | null
+  first_tx_explorer_url: string | null
+  first_slot: number | null
+  data: { label: string | null; provider: string | null; session: string | null; synthetic: boolean }
 }
 
 export interface Summary {
@@ -33,6 +55,9 @@ export interface Summary {
   copied: number
   stopped: number
   rejected: number
+  stopped_by_reason: Record<string, number>
+  rejected_by_reason: Record<string, number>
+  signal_source: SignalSource
   notes: string[]
   data_label: string | null
   feed: { source: string; badge: string }
@@ -60,14 +85,14 @@ export interface Leader { id: string; name: string; about: string; public_key: s
 
 export const STATUS: Record<Status, { label: string; dot: string }> = {
   COPIED: { label: 'Copied', dot: 'dot-ok' },
-  STOPPED_BY_COPIER: { label: 'Stopped by copier', dot: 'dot-warn' },
-  REJECTED_BY_RULES: { label: 'Rejected by your rules', dot: 'dot-bad' },
+  STOPPED_BY_COPIER: { label: 'Skipped before the gate', dot: 'dot-warn' },
+  REJECTED_BY_RULES: { label: 'Blocked by your rules', dot: 'dot-bad' },
   CLIPPED: { label: 'Clipped', dot: 'dot-off' },
 }
 
 export const FILTERS: { key: 'ALL' | Status; label: string }[] = [
-  { key: 'ALL', label: 'All' }, { key: 'COPIED', label: 'Copied' }, { key: 'STOPPED_BY_COPIER', label: 'Stopped' },
-  { key: 'REJECTED_BY_RULES', label: 'Rejected' }, { key: 'CLIPPED', label: 'Clipped' },
+  { key: 'ALL', label: 'All' }, { key: 'COPIED', label: 'Copied' }, { key: 'STOPPED_BY_COPIER', label: 'Skipped' },
+  { key: 'REJECTED_BY_RULES', label: 'Blocked' }, { key: 'CLIPPED', label: 'Clipped' },
 ]
 
 export const PACES: { key: Pace; label: string; about: string }[] = [
@@ -123,6 +148,26 @@ export function rowToEvent(r: Row): LogEvent {
 }
 
 export const shortKey = (k: string) => `${k.slice(0, 4)}…${k.slice(-4)}`
+
+export const SOURCE_LABEL: Record<SourceKind, string> = { chain: 'Solana devnet', chain_cache: 'Solana devnet (saved copy)', local: 'Local feed' }
+
+/** What one row's badge says: leader, signal number, where it came from, and a transaction link only when there is one. */
+export function rowBadge(r: Row, leaderName: string) {
+  const num = r.signal_id.slice(r.signal_id.lastIndexOf(':') + 1)
+  const onChain = r.source !== 'local' && !!r.tx
+  return {
+    leader: leaderName,
+    signal: `#${num}`,
+    signalId: r.signal_id,
+    source: SOURCE_LABEL[onChain ? r.source : 'local'],
+    tone: onChain ? (r.source === 'chain' ? 'chain' : 'cache') : 'local',
+    tx: onChain && r.tx ? { short: shortKey(r.tx), url: r.explorer_url } : null,
+    note: onChain ? (r.source === 'chain_cache' ? 'saved copy of an earlier devnet read' : 'on Solana devnet') : 'not on-chain',
+  } as const
+}
+
+/** "SELL_WITHOUT_POSITION 4, MAX_POSITION 3" for the line under the counts. */
+export const byReason = (m: Record<string, number> | undefined) => Object.entries(m ?? {}).map(([k, v]) => `${k} ${v}`).join(', ')
 
 export const follow = {
   leaders: () => call<{ leaders: Leader[]; note: string }>('/follow/leaders'),

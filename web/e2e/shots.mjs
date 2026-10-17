@@ -76,6 +76,13 @@ let run
   check(await page.isVisible('[data-testid=badge-data]') && await page.isVisible('[data-testid=badge-feed]'), '/follow: the source badges are shown')
   check((await page.textContent('[data-testid=badge-feed]')) === 'local feed', '/follow: the feed badge is the manifest text')
   check(await page.isVisible('[data-testid=chainscene-strip][data-mode="3d"] canvas'), '/follow: the 3D strip is shown above the feed')
+  // where the signals came from: this run chose the local feed, so nothing may look like chain data
+  check(await page.isVisible('[data-testid=source-panel][data-kind=local]'), '/follow: the signal source panel is shown, kind local')
+  check(/Not from Solana/.test(await page.textContent('[data-testid=source-warning]')), '/follow: a local feed is called "Not from Solana"')
+  check(/Local feed/.test(await page.textContent('[data-testid=source-kind]')) && !(await page.isVisible('[data-testid=first-tx-link]')), '/follow: local feed has no transaction link')
+  check((await page.locator('[data-testid=row-source]').count()) > 0 && (await page.locator('[data-testid=row-source]:not([data-source=local])').count()) === 0 && (await page.locator('[data-testid=row-tx]').count()) === 0, '/follow: every row badge is local, none links a transaction')
+  check(/skipped before the gate/.test(await page.textContent('[data-testid=strip]')) && /blocked by your rules/.test(await page.textContent('[data-testid=strip]')), '/follow: counts are "skipped before the gate" and "blocked by your rules"')
+  check(/does not run your trades/.test(await page.textContent('[data-testid=source-panel]')) && /signal only/.test(await page.textContent('[data-testid=source-panel]')), '/follow: the panel says what Solana does and does not do')
   const rej = page.locator('[data-testid=row][data-status=REJECTED_BY_RULES]').first()
   if (await rej.count()) { await rej.click(); await page.waitForSelector('[data-testid=explain-detail]'); check(true, '/follow: a row opens its explanation in the drawer') }
   await page.mouse.move(100, 880); await page.waitForTimeout(400)

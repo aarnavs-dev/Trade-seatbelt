@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { money } from '../lib/format'
+import { LOCAL_FEED_WARNING, SOLANA_DOES_NOT, SOLANA_DOES_NOT_TITLE, SOLANA_STEPS, SOLANA_WHAT_IS_PUBLIC } from '../lib/copy'
 import {
-  DEFAULT_OPTIONS, FILTERS, follow, nyTime, PACES, rowToEvent, shortKey, STATUS,
-  type CopyMode, type Explanation, type Feed, type Leader, type Options, type Row, type Status, type Summary,
+  byReason, DEFAULT_OPTIONS, FILTERS, follow, nyTime, PACES, rowBadge, rowToEvent, shortKey, STATUS,
+  type CopyMode, type Explanation, type Feed, type Leader, type Options, type Row, type SignalSource, type Status, type Summary,
 } from '../lib/follow'
 import { rules } from '../lib/rules'
 import { ChainStore, useSnap } from '../lib/store'
@@ -19,10 +20,54 @@ const FEEDS: { key: Feed; label: string; about: string }[] = [
 ]
 const COPY: { key: CopyMode; label: string }[] = [{ key: 'same', label: 'Same as the leader' }, { key: 'percent', label: 'A percentage' }, { key: 'fixed', label: 'A fixed amount' }]
 
-function Solana({ r }: { r: Row }) {
-  return r.tx
-    ? <span>On-chain{r.slot ? `, slot ${r.slot.toLocaleString('en-US')}` : ''} · <a href={r.explorer_url ?? '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Explorer</a></span>
-    : <span className="muted">Local feed, not on-chain</span>
+/** One row's provenance: leader, signal number, where it came from, and a transaction link only when it really has one. */
+function SourceBadge({ r, leader }: { r: Row; leader: string }) {
+  const b = rowBadge(r, leader)
+  return (
+    <span className="srcbadge" data-testid="row-source" data-source={r.source}>
+      <span className="line"><span style={{ fontWeight: 500 }}>{b.leader}</span><span className="mono muted" title={b.signalId}>{b.signal}</span>
+        <span className={`tag tag-${b.tone}`}>{b.source}</span></span>
+      <span className="muted" style={{ fontSize: 12.5 }}>
+        {b.tx ? <>tx <a className="mono" href={b.tx.url ?? '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} data-testid="row-tx">{b.tx.short}</a>{r.slot ? ` · slot ${r.slot.toLocaleString('en-US')}` : ''} · {b.note}</> : b.note}
+      </span>
+    </span>
+  )
+}
+
+/** Where this run's signals came from, and what Solana does and does not do. A local or saved source is never made to look like chain data. */
+function SignalSourcePanel({ s }: { s: SignalSource }) {
+  const tone = s.kind === 'chain' ? 'chain' : s.kind === 'chain_cache' ? 'cache' : 'local'
+  const k = (a: string, v: React.ReactNode) => <div className="kv"><dt>{a}</dt><dd>{v}</dd></div>
+  return (
+    <section className="srcpanel stack" aria-label="Signal source" data-testid="source-panel" data-kind={s.kind}>
+      <p className="label">Signal source</p>
+      {s.kind !== 'chain' && (
+        <p className="note note-warn" role="status" data-testid="source-warning">
+          {s.kind === 'local' ? LOCAL_FEED_WARNING : 'A saved copy of an earlier devnet read. It was not read from Solana during this run.'}
+          {s.fallback && <> You asked for Solana devnet, so this is a fallback: {s.fallback_why}.</>}
+        </p>
+      )}
+      <dl className="plain">
+        {k('Leader', <>{s.leader.name ?? s.leader.id} <span className="muted">· {s.leader.strategy}</span></>)}
+        {k('Source used', <><span className={`tag tag-${tone}`} data-testid="source-kind">{s.label}</span>{s.kind === 'chain' && s.rpc_host && <span className="muted"> · read live from {s.rpc_host}</span>}</>)}
+        {k('Published by', s.publisher_key
+          ? <><span className="mono" title={s.publisher_key} data-testid="publisher-key">{shortKey(s.publisher_key)}</span> · <a href={s.publisher_explorer_url ?? '#'} target="_blank" rel="noopener noreferrer">account on Solana Explorer</a></>
+          : <span className="muted">Nobody: local-feed signals are not signed or published.</span>)}
+        {k('Transaction', s.first_tx
+          ? <><span className="mono" style={{ overflowWrap: 'anywhere' }} data-testid="first-tx">{s.first_tx}</span>{' '}
+              <a href={s.first_tx_explorer_url ?? '#'} target="_blank" rel="noopener noreferrer" data-testid="first-tx-link">View on Solana Explorer (devnet)</a>
+              <span className="muted"> · {s.with_transaction} of {s.signals} signals have a transaction; the others do not</span></>
+          : <span className="muted">None. {s.kind === 'local' ? 'A local feed has no transactions.' : 'No signal in this run carries one.'}</span>)}
+        {k('Market data', <>{s.data.label ?? '—'}{s.data.provider && !s.data.synthetic ? <span className="muted"> · {s.data.provider}, session {s.data.session}</span> : null}</>)}
+      </dl>
+      <div className="stack" style={{ fontSize: 14 }}>
+        <p className="label">What Solana does here{s.kind !== 'chain' && ' (when the source is Solana; this run’s is not)'}</p>
+        <p className="muted prose">A public, timestamped record of each signal. {SOLANA_STEPS[0].text} {SOLANA_STEPS[1].text} {SOLANA_STEPS[2].text}</p>
+        <p className="label">{SOLANA_DOES_NOT_TITLE}</p>
+        <p className="muted prose">{SOLANA_DOES_NOT} {SOLANA_WHAT_IS_PUBLIC}</p>
+      </div>
+    </section>
+  )
 }
 
 function Kv({ k, v }: { k: string; v: React.ReactNode }) { return <div className="kv"><dt>{k}</dt><dd>{v}</dd></div> }
@@ -122,6 +167,7 @@ export default function Follow() {
   const shown = useMemo(() => rows.filter((r) => filter === 'ALL' || r.status === filter).slice().reverse(), [rows, filter])
   const count = (...s: Status[]) => rows.filter((r) => s.includes(r.status)).length
   const live = LIVE.includes(phase)
+  const leaderName = summary?.signal_source.leader.name ?? leaders.find((l) => l.id === o.leader)?.name ?? o.leader
   const finishedBySession = phase === 'done' && summary?.session_limit
 
   return (
@@ -202,6 +248,7 @@ export default function Follow() {
 
           {summary?.notes.map((n) => <p key={n} className="note note-warn" role="status" data-testid="note">{n}</p>)}
           {finishedBySession && <p className="note note-warn" role="status" data-testid="session-limit">{summary!.session_limit!.text} The session finished here.</p>}
+          {summary?.signal_source && <SignalSourcePanel s={summary.signal_source} />}
 
           {(rows.length > 0 || phase !== 'idle') && (
             <section aria-label="Live feed" data-testid="feed">
@@ -210,10 +257,16 @@ export default function Follow() {
                   {FILTERS.map((f) => <button key={f.key} className="tab" role="tab" aria-selected={filter === f.key} onClick={() => setFilter(f.key)} data-testid={`filter-${f.key}`}>{f.label}</button>)}
                 </div>
                 <p className="muted num" style={{ fontSize: 13 }} aria-live="polite" data-testid="strip">
-                  {rows.length}{summary && live ? ` of ${summary.total_in_feed}` : ''} seen · {count('COPIED', 'CLIPPED')} copied · {count('STOPPED_BY_COPIER')} stopped · {count('REJECTED_BY_RULES')} rejected
+                  {rows.length}{summary && live ? ` of ${summary.total_in_feed}` : ''} seen · {count('COPIED', 'CLIPPED')} copied · {count('STOPPED_BY_COPIER')} skipped before the gate · {count('REJECTED_BY_RULES')} blocked by your rules
                   {conn === 'reconnecting' ? ' · connection lost, retrying' : live ? ' · live' : phase === 'done' ? ' · finished' : ''}
                 </p>
               </div>
+              <p className="muted" style={{ fontSize: 13, margin: '-8px 0 var(--s3)' }} data-testid="count-help">
+                <b style={{ fontWeight: 500 }}>Skipped before the gate:</b> the copier never sent the order (nothing to sell, a repeat or stale signal, a session limit)
+                {summary && byReason(summary.stopped_by_reason) ? <> — <span className="mono">{byReason(summary.stopped_by_reason)}</span></> : null}.{' '}
+                <b style={{ fontWeight: 500 }}>Blocked by your rules:</b> the gate received it and refused it under your limits
+                {summary && byReason(summary.rejected_by_reason) ? <> — <span className="mono">{byReason(summary.rejected_by_reason)}</span></> : null}.
+              </p>
 
               {phase !== 'idle' && <div style={{ marginBottom: 'var(--s3)' }}><ChainScene store={chain} variant="strip" label="The last decisions as blocks, newest next to the rules ring" /></div>}
               {phase === 'error' && <div role="alert" data-testid="error-box"><p className="error">{error}</p><button className="btn" style={{ marginTop: 'var(--s2)' }} onClick={start}>Try again</button></div>}
@@ -224,7 +277,7 @@ export default function Follow() {
 
               {shown.length > 0 && (
                 <table className="tbl feed">
-                  <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th className="r">Qty</th><th className="r">Price</th><th>Status</th><th>Reason</th><th>Solana</th></tr></thead>
+                  <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th className="r">Qty</th><th className="r">Price</th><th>Status</th><th>Reason</th><th>Signal source</th></tr></thead>
                   <tbody data-testid="rows">
                     {shown.map((r) => (
                       <tr key={r.n} className="rowbtn row-in" tabIndex={0} role="button" data-testid="row" data-status={r.status} data-open={open === r.n ? 1 : 0} data-hover={snap.hover === r.n ? 1 : 0}
@@ -238,7 +291,7 @@ export default function Follow() {
                         <td className="num r c-price">{r.price ? money(r.price) : '—'}</td>
                         <td className="c-status"><StatusText dot={STATUS[r.status].dot}>{STATUS[r.status].label}</StatusText></td>
                         <td className="c-reason" style={{ color: 'var(--ink-2)', maxWidth: '38ch' }}>{r.reason_text}</td>
-                        <td className="c-sol" style={{ fontSize: 13 }}><Solana r={r} /></td>
+                        <td className="c-sol" style={{ fontSize: 13 }}><SourceBadge r={r} leader={leaderName} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -252,10 +305,9 @@ export default function Follow() {
           <details style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s3)' }} data-testid="how">
             <summary>How this works</summary>
             <ol className="steps prose" style={{ marginTop: 'var(--s2)' }}>
-              <li><div><b>Publish.</b> <span className="muted">The leader’s strategy posts each trade as a signed memo transaction on Solana devnet.</span></div></li>
-              <li><div><b>Verify.</b> <span className="muted">Anyone can read it. Your copier accepts only signals signed by the leader’s key, and every signal links to Solana Explorer.</span></div></li>
-              <li><div><b>Decide.</b> <span className="muted">Nothing happens because a signal is on-chain. Your own rules decide. Devnet is a test network and fills are paper.</span></div></li>
+              {SOLANA_STEPS.map((x) => <li key={x.title}><div><b>{x.title}.</b> <span className="muted">{x.text}</span></div></li>)}
             </ol>
+            <p className="muted prose" style={{ marginTop: 'var(--s2)' }}>{SOLANA_DOES_NOT}</p>
           </details>
         </div>
       </div>

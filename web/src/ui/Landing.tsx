@@ -3,6 +3,7 @@ import ChainScene, { useFlat } from '../scene/ChainScene'
 import { ChainStore } from '../lib/store'
 import { HERO_TRAVEL_MS, startHero } from '../lib/hero'
 import { usePhone } from '../lib/env'
+import { SOLANA_DOES_NOT, SOLANA_DOES_NOT_TITLE, SOLANA_STEPS } from '../lib/copy'
 import { Page } from './kit'
 
 const REPO = 'https://github.com/aarnavs-dev/Trade-seatbelt'
@@ -139,12 +140,10 @@ export default function Landing() {
             <h2 className="sec-title">How Solana is used</h2>
             <div className="center-col stack-lg">
               <ol className="steps">
-                <li><div><h3 style={{ fontSize: 22 }}>Publish</h3><p className="muted prose">The leader’s strategy posts each trade as a signed memo transaction on Solana devnet.</p></div></li>
-                <li><div><h3 style={{ fontSize: 22 }}>Verify</h3><p className="muted prose">Anyone can read it. Your copier accepts only signals signed by the leader’s key, and every signal links to Solana Explorer.</p></div></li>
-                <li><div><h3 style={{ fontSize: 22 }}>Decide</h3><p className="muted prose">Nothing happens because a signal is on-chain. Your own rules decide.</p></div></li>
+                {SOLANA_STEPS.map((s) => <li key={s.title}><div><h3 style={{ fontSize: 22 }}>{s.title}</h3><p className="muted prose">{s.text}</p></div></li>)}
               </ol>
-              <div className="note"><h3 style={{ fontSize: 20, marginBottom: 8 }}>What Solana does not do here</h3>
-                <p className="prose">It does not run your trades. It does not judge whether the leader is any good. Devnet is a test network, and fills are paper.</p></div>
+              <div className="note"><h3 style={{ fontSize: 20, marginBottom: 8 }}>{SOLANA_DOES_NOT_TITLE}</h3>
+                <p className="prose">{SOLANA_DOES_NOT}</p></div>
             </div>
           </div>
         </section>

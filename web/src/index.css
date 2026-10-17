@@ -267,3 +267,12 @@ details > summary { cursor: pointer; font-weight: 500; }
 .flowlist li:last-child { padding-bottom: 0; }
 .flowlist li .dot { position: absolute; left: -21px; top: 7px; margin: 0; }
 .flowlist small { display: block; font-weight: 400; color: var(--ink-3); font-size: 13.5px; margin-top: 4px; }
+
+/* ---------- signal source: a small tag that says where a signal came from; local and saved copies are never styled like chain ---------- */
+.tag { display: inline-block; font: 500 11.5px/1 var(--font-sans); letter-spacing: 0.04em; padding: 4px 7px; border: 1px solid var(--line-2); border-radius: 3px; color: var(--ink-2); white-space: nowrap; }
+.tag-chain { border-color: var(--cool); color: var(--cool); }
+.tag-cache, .tag-local { border-style: dashed; color: var(--warn); border-color: var(--warn); }
+.srcbadge { display: grid; gap: 4px; }
+.srcbadge .line { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.srcpanel .kv dt { align-self: start; }
+.srcpanel .mono { font-size: 13px; }
